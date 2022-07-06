@@ -368,6 +368,8 @@ acs.commute.recode <- function(commutes
                            ,'Car'
                            ,'Public transit'
                            ,'Active transit'
+                           ,'Work from home'
+                           ,'Other'
                          ))
 
   return(commutes)
