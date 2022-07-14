@@ -1,4 +1,21 @@
 
+
+# little helpers ----------------------------------------------------------
+
+#' extract.acs.var
+#'
+#' From acs table with Btable#_var# format, extract the variable. Takes the
+#' column called "variable" for table pulled with tidycensus.
+#'
+#' @export extract.acs.var
+extract.acs.var <- function(x) {
+
+      as.numeric(
+        str_extract(x, '[0-9]{3}$')
+    )
+
+}
+
 # pulling data wrappers -----------------------------------------------------
 
 
@@ -23,7 +40,7 @@
 multiyr.acs.wrapper <- function( tables
                                  , states
                                  , geo
-                                 , years = c(2010, 2015, 2019)
+                                 , years = c(2019)
                                  , metadata = NULL
                                  ,cache = T
                                  ,survey = 'acs5') {
@@ -52,14 +69,14 @@ multiyr.acs.wrapper <- function( tables
 
   x <- x %>% select(-name)
 
-
   # add labels
   x <- x %>%
     left_join(metadata[c('name', 'label')]
               , by = c('variable' = 'name')) %>%
     mutate(var =
-             as.numeric(
-               str_extract(variable, '[0-9]{3}$')))
+             extract.acs.var(variable)
+           ,.after = tabl
+             )
   return(x)
 }
 
