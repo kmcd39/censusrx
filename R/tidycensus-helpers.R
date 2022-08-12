@@ -343,7 +343,7 @@ acs.rentburden.recode <- function(rentb
 #' @inheritParams acs.demographic.recode
 #'
 #' @export acs.commute.recode
-acs.commute.recode <- function(commutes
+acs.commute.share.recode <- function(commutes
                              ,separate.carpools = F
                              ,filter.aggregates = T
                              #,drop.obscure = T
@@ -355,7 +355,7 @@ acs.commute.recode <- function(commutes
 
   if(filter.aggregates)
     commutes <- commutes %>%
-      filter( ! var %in% c(1,2, 8) )
+      filter( ! var %in% c(1,2,4,8) )
 
   #if(drop.obscure) commutes <- commutes %>%  filter( ! var %in% c(16) )
 
