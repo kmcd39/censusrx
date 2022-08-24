@@ -65,13 +65,13 @@ acs.commute.share.recode <- function(commutes
 #' state with modeshare and avg. commute times for bus/car/trains/and total
 #' transit.
 #'
-#' @param geotype geography type, passed to tidycensus. Default is county. Not
+#' @param geo geography type, passed to tidycensus. Default is county. Not
 #'   not all geographies available for this pull.
 #' @param state state fp or abrv.
 #' @param year year
 #'
 #' @export commute.times.by.mode
-commute.times.by.mode <- function( geotype = 'county'
+commute.times.by.mode <- function( geo = 'county'
                                          ,state
                                          ,year = 2019) {
 
@@ -80,7 +80,7 @@ commute.times.by.mode <- function( geotype = 'county'
   # acs table B08136 - AGGREGATE TRAVEL TIME TO WORK (IN MINUTES) OF WORKERS BY
   # MEANS OF TRANSPORTATION TO WORK
   cmts <- tidycensus::get_acs(
-    geography = geotype
+    geography = geo
     ,table = 'B08136'
     ,year = year
     #,county = cofps

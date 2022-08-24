@@ -150,7 +150,7 @@ ca <- commute.times.by.mode('county', 'CA', 2019)
 
 ca
 fl <- commute.times.by.mode('county', 'FL', 2019)
-
+fl %>% filter(geoid %in% cofps)
 # check for LA county..
 
 

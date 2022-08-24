@@ -4,10 +4,10 @@
 \alias{commute.times.by.mode}
 \title{commute.times.by.mode}
 \usage{
-commute.times.by.mode(geotype = "county", state, year = 2019)
+commute.times.by.mode(geo = "county", state, year = 2019)
 }
 \arguments{
-\item{geotype}{geography type, passed to tidycensus. Default is county. Not
+\item{geo}{geography type, passed to tidycensus. Default is county. Not
 not all geographies available for this pull.}
 
 \item{state}{state fp or abrv.}
