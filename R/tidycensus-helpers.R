@@ -333,65 +333,6 @@ acs.rentburden.recode <- function(rentb
 }
 
 
-#' acs.commute.recode
-#'
-#' Uses table B08006, SEX OF WORKERS BY MEANS OF TRANSPORTATION TO WORK.
-#' Immediately trims the breakdown by sex.
-#'
-#' @param commutes a pull of table B08006, as from `multiyr.acs.wrapper(...)`.
-#' @param separate.carpools whether to keep carpoolers separate
-#' @inheritParams acs.demographic.recode
-#'
-#' @export acs.commute.recode
-acs.commute.share.recode <- function(commutes
-                             ,separate.carpools = F
-                             ,filter.aggregates = T
-                             #,drop.obscure = T
-                             ) {
-
-
-  commutes <- commutes %>%
-    filter(var %in% 1:17)
-
-  if(filter.aggregates)
-    commutes <- commutes %>%
-      filter( ! var %in% c(1,2,4,8) )
-
-  #if(drop.obscure) commutes <- commutes %>%  filter( ! var %in% c(16) )
-
-  commutes <- commutes %>%
-    mutate(recode = case_when(
-      var %in% c(3) ~ 'Drove alone'
-      ,var %in% c(4:7) ~ 'Carpooled'
-      ,var %in% c(8:13) ~ 'Public transit'
-      ,var %in% c(14:15) ~ 'Active transit'
-      ,var %in% c(16) ~ 'Work from home'
-      ,TRUE ~ 'Other') # label)
-    )
-
-
-  if( !separate.carpools )
-    commutes <- commutes %>%
-    mutate(recode = case_when(
-      var %in% c(3:7) ~ 'Car'
-      ,TRUE ~ recode    )
-    )
-
-  # also use factor commutes status
-  commutes$recode <- factor(commutes$recode
-                         , levels = c(
-                           'Drove alone'
-                           ,'Carpooled'
-                           ,'Car'
-                           ,'Public transit'
-                           ,'Active transit'
-                           ,'Work from home'
-                           ,'Other'
-                         ))
-
-  return(commutes)
-
-}
 
 # scratch -----------------------------------------------------------------
 
