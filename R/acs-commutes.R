@@ -91,11 +91,8 @@ commute.times.by.mode <- function( geo = 'county'
     select(-name)
 
   cmt <- cmts %>%
-      mutate( var =
-                as.numeric(str_extract(variable, "[0-9]{3}$"))) %>%
-      mutate(geoid =
-             geox::fix.geoid(geoid, 5))
-
+    mutate(var = censusrx::extract.acs.var(variable)) %>%
+    mutate(geoid = geox::fix.geoid(geoid))
 
   # TABLE ENCODING:
   #
@@ -133,7 +130,7 @@ commute.times.by.mode <- function( geo = 'county'
                 ,TRUE ~ as.character(NA)
               )) %>%
     group_by(geoid, recode) %>%
-    summarise(agg.mins = sum(estimate))
+    summarise(agg.mins = sum(estimate, na.rm = T))
 
   # join total commuters - table B08006
 
@@ -165,9 +162,10 @@ commute.times.by.mode <- function( geo = 'county'
     select(-name)
 
   cmode <- cmodes %>%
-    mutate(geoid = geox::fix.geoid(geoid, 5))
+    mutate(var = censusrx::extract.acs.var(variable)) %>%
+    mutate(geoid = geox::fix.geoid(geoid))
 
-  # add total
+  # add total, using total var in acs (not summing by area)
   cmode <- cmode %>%
     group_by(geoid) %>%
     mutate(tot.commuters =
@@ -175,10 +173,8 @@ commute.times.by.mode <- function( geo = 'county'
 
   # recode similarly
   cmode <- cmode %>%
-    group_by(geoid) %>%
-    mutate( var =
-              as.numeric(str_extract(variable, "[0-9]{3}$") )) %>%
     filter(var %in% c(2,8:12)) %>%
+    group_by(geoid) %>%
     mutate(recode =
              case_when(
                var %in% c(2) ~ 'Car'
@@ -188,11 +184,11 @@ commute.times.by.mode <- function( geo = 'county'
                ,TRUE ~ 'Other') # label)
     ) %>%
     group_by(geoid, recode, tot.commuters) %>%
-    summarise(n.commuters = sum(estimate)) %>%
+    summarise(n.commuters = sum(estimate, na.rm = T)) %>%
     group_by(geoid) %>%
     mutate(mode.perc =
              n.commuters /
-             sum(n.commuters)) %>%
+             tot.commuters) %>%
     ungroup()
 
   cmt <- cmode %>%
