@@ -1,5 +1,4 @@
-
-#' acs.commute.share.recode
+#' q.recode.commute.table.B08006
 #'
 #' Uses table B08006, SEX OF WORKERS BY MEANS OF TRANSPORTATION TO WORK.
 #' Immediately trims the breakdown by sex.
@@ -8,15 +7,12 @@
 #' @param separate.carpools whether to keep carpoolers separate
 #' @inheritParams acs.demographic.recode
 #'
-#' @export acs.commute.share.recode
-acs.commute.share.recode <- function(commutes
-                                     ,separate.carpools = F
-                                     ,filter.aggregates = T
-                                     #,drop.obscure = T
-) {
+#' @export q.recode.commute.table.B08006
+q.recode.commute.table.B08006 <- function(x
+                                          ,separate.carpools = F
+                                          ,filter.aggregates = T) {
 
-
-  commutes <- commutes %>%
+  commutes <- x %>%
     filter(var %in% 1:17)
 
   if(filter.aggregates)
@@ -31,8 +27,10 @@ acs.commute.share.recode <- function(commutes
       ,var %in% c(4:7) ~ 'Carpooled'
       ,var %in% c(8:13) ~ 'Public transit'
       ,var %in% c(14:15) ~ 'Active transit'
-      ,var %in% c(16) ~ 'Work from home'
-      ,TRUE ~ 'Other') # label)
+      ,var %in% c(16) ~ 'Other'
+      ,var %in% c(17) ~ 'Work from home'
+    )
+    ,.after = variable
     )
 
 
@@ -55,8 +53,66 @@ acs.commute.share.recode <- function(commutes
                                 ,'Work from home'
                                 ,'Other'
                               ))
+
+  commutes <- commutes %>%
+    group_by(geoid, name, recode) %>%
+
+    return(commutes)
+}
+
+# commute mode shares -----------------------------------------------------
+
+#' quick.pull.commute.share
+#'
+#' Wrapper to pull and recode table B08006, SEX OF WORKERS BY MEANS OF TRANSPORTATION TO WORK.
+#' Immediately trims the breakdown by sex.
+#'
+#' @param ... passed onto `tidycensus::get_acs`
+#' @param separate.carpools whether to keep carpoolers separate
+#' @inheritParams q.recode.commute.table.B08006
+#'
+#' @export quick.pull.commute.share
+quick.pull.commute.share <- function( ...
+                                      ,separate.carpools = F
+                                      ,filter.aggregates = T) {
+
+  #browser()
+
+  commutes <-  tidycensus::get_acs(
+    ...
+    ,table = 'B08006'
+    ,cache_table = T
+  ) %>%
+    rename_with( tolower ) %>%
+    mutate(var = censusrx::extract.acs.var(variable),
+           .after = variable)
+
+  tots <- commutes %>%
+    filter(var == 1) %>%
+    select(geoid, tot.workers = estimate)
+
+  commutes <- q.recode.commute.table.B08006(
+    commutes
+    ,separate.carpools = separate.carpools
+    ,filter.aggregates = filter.aggregates
+  )
+
+  # add totals
+  commutes <- commutes %>%
+    left_join(tots)
+
+  # sum to recode category, add modeshare
+  commutes <- commutes %>%
+    group_by(geoid, name, tot.workers, recode ) %>%
+    summarise(n = sum(estimate)) %>%
+    ungroup() %>%
+    mutate(perc = n / tot.workers)
+
   return(commutes)
 }
+
+
+# commute car and transit times -----------------------------------------------------------
 
 
 #' commute.times.by.mode

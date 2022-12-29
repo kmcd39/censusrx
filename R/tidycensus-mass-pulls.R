@@ -159,7 +159,7 @@ gett.census.totals <- function(states, years
                       geography = geo
                       ,variables =
                         c( pop = 'B01001_001'
-                           ,n.hh = 'B07013_001' #n.households
+                           ,n.hh = 'B08201_001' #n.households
                            ,n.hunits = 'B25034_001' # n housing units
                         )
                       ,state = .x
