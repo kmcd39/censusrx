@@ -21,7 +21,8 @@ tidycensus2recoded.tblList <- function(states, years
                                            c('B03002',
                                              'B25034',
                                              'B25004',
-                                             'B25070')
+                                             'B25070',
+                                             'B08006')
                                        , metadata = NULL
                                        ,survey = 'acs5'
                                        ) {
@@ -45,7 +46,8 @@ tidycensus2recoded.tblList <- function(states, years
   fcns <- c(acs.demographic.recode,
             acs.bldg.age.recode,
             acs.vacancy.recode,
-            acs.rentburden.recode
+            acs.rentburden.recode,
+            acs.commute.recode
   )
 
   # call appropriate recode fcn for each table
@@ -53,7 +55,7 @@ tidycensus2recoded.tblList <- function(states, years
              , ~.y(.x)
   )
 
-  # sum torecode, and add %s
+  # sum to recode, and add %s
   rx <- map(rx,
             ~{.x %>%
                 group_by(yr, geoid, recode) %>%
@@ -102,7 +104,10 @@ acs.tbl.index <- function(
 
 #' pull.tidycensus.median.tables
 #'
-#' Pulls median tables, like hh income and contract rent.
+#' Pulls median tables, like hh income and contract rent:
+#' - B19013 (median household income; universe is households)
+#' - B25058 (median contract rent; universe is "Renter-occupied Housing Units Paying Cash Rent")
+#' - B25077 (median home value; universe is owner-occupied housing units)
 #'
 #' @inheritParams tidycensus2recoded.tblList
 #'
@@ -110,8 +115,9 @@ acs.tbl.index <- function(
 pull.tidycensus.median.tables <- function(states, years
                                ,geo = 'tract'
                                ,tbls =
-                                 c( 'B19013' # hh inc
-                                    ,'B25058' # c rent
+                                 c('B19013' # hh inc
+                                   ,'B25058' # c rent
+                                   ,'B25077' # median home value
                                  )
                                ,survey = 'acs5'
 ) {
@@ -169,8 +175,7 @@ gett.census.totals <- function(states, years
                       ,geometry = F
                       ,cache_table = T
                     ) %>%
-                        mutate(tabl = .x
-                               ,yr = .y
+                        mutate(yr = .y
                         ) %>%
                         rename_with( tolower )
                     }) %>%
@@ -189,7 +194,7 @@ gett.census.totals <- function(states, years
 
 # metawrapper -------------------------------------------------------------
 
-#' mass.acs.pull.wrapper
+#' mass.acs.pull.tract.attrs
 #'
 #' Wrapps all the other ACS/tidycensus wrapper functions here to pull a
 #' selection of tables with recoded values, medians, and totals, over a
@@ -200,9 +205,9 @@ gett.census.totals <- function(states, years
 #' @inheritParams tidycensus2recoded.tblList
 #'
 #' @export mass.acs.pull.wrapper
-mass.acs.pull.wrapper <- function(states,
-                                  years,
-                                  geo) {
+mass.acs.pull.wrapper <- function(state,
+                                  county,
+                                  year) {
 
 
   ts <- tidycensus2recoded.tblList( states

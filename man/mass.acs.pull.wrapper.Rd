@@ -2,16 +2,9 @@
 % Please edit documentation in R/tidycensus-mass-pulls.R
 \name{mass.acs.pull.wrapper}
 \alias{mass.acs.pull.wrapper}
-\title{mass.acs.pull.wrapper}
+\title{mass.acs.pull.tract.attrs}
 \usage{
-mass.acs.pull.wrapper(states, years, geo)
-}
-\arguments{
-\item{states}{vector of state FIPS or 2-letters}
-
-\item{years}{vector of years}
-
-\item{geo}{selection geography, passed onto \code{tidycensus}}
+mass.acs.pull.wrapper(state, county, year)
 }
 \description{
 Wrapps all the other ACS/tidycensus wrapper functions here to pull a

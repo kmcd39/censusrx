@@ -8,7 +8,7 @@ tidycensus2recoded.tblList(
   states,
   years,
   geo = "tract",
-  tbls = c("B03002", "B25034", "B25004", "B25070"),
+  tbls = c("B03002", "B25034", "B25004", "B25070", "B08006"),
   metadata = NULL,
   survey = "acs5"
 )

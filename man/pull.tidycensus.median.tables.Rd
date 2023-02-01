@@ -8,7 +8,7 @@
   states,
   years,
   geo = "tract",
-  tbls = c("B19013", "B25058"),
+  tbls = c("B19013", "B25058", "B25077"),
   survey = "acs5"
 )
 }
@@ -20,5 +20,10 @@
 \item{geo}{selection geography, passed onto \code{tidycensus}}
 }
 \description{
-Pulls median tables, like hh income and contract rent.
+Pulls median tables, like hh income and contract rent:
+\itemize{
+\item B19013 (median household income; universe is households)
+\item B25058 (median contract rent; universe is "Renter-occupied Housing Units Paying Cash Rent")
+\item B25077 (median home value; universe is owner-occupied housing units)
+}
 }
