@@ -537,20 +537,75 @@ acs.pop.age.recode <- function(x
           ,grepl('18 and 19|^20|^21|22 to 24', label) ~ '18 to 24'
           ,grepl('55 to 59|60 and 61|62 to 64', label) ~ '55 to 64'
           ,grepl('65 and 66|67 to 69|70 to 74|75 to 79|80 to 84|85 and over', label) ~ 'Over 65'
-          ,TRUE ~ '25 to 54 ("prime working age")'
+          ,TRUE ~ '25 to 54'
         )) %>%
     mutate(recode =
              factor(recode,
                     levels = c(
                       'Under 18'
                       ,'18 to 24'
-                      ,'25 to 54 ("prime working age")'
+                      ,'25 to 54'
                       ,'55 to 64'
                       ,'Over 65'
                     )))
 
   return(ages)
 
+}
+
+#' acs.tenure.by.hh.size.recode
+#'
+#' Recode table B25009 (unv is occupied housing units); separates out tenure
+#' from size.
+#'
+#' @export acs.tenure.by.hh.size.recode
+acs.tenure.by.hh.size.recode <- function(x) {
+
+  # remove aggregates, remove "Total: " prefix.
+  hhtenure <- x %>%
+    filter( grepl('person household$',
+                  label))  %>%
+    mutate(label =
+             gsub('^Total: ', '', label))
+
+
+  # separate tenure and szie; recode size
+  hhtenure <- hhtenure %>%
+    tidyr::separate(label, into = c('tenure', 'size')
+                    ,sep = ': ') %>%
+    mutate(size.recode =
+             case_when(
+               grepl('^[1-2]', size) ~ '1 or 2 people'
+               ,grepl('^[3-7]', size) ~ '3 or more people'
+             )
+    )
+
+  # abbreviate redundant labels ("occupied" and "household")
+  hhtenure <- hhtenure %>%
+    mutate(tenure =
+             case_when(
+               grepl('Owner', tenure) ~ 'Owners'
+               ,grepl('Renter', tenure) ~ 'Renters'
+             )
+    )
+
+  # get factor order
+  ordr <- hhtenure %>%
+    select(variable, tenure, size, size.recode) %>%
+    distinct() %>%
+    arrange(variable)
+
+  # apply factor levels
+  hhtenure <- hhtenure %>%
+    mutate(tenure =
+             factor(tenure
+                    ,levels = unique(ordr$tenure))
+           ,size.recode =
+             factor(size.recode
+                    ,levels = unique(ordr$size.recode))
+    )
+
+  return(hhtenure)
 }
 
 # scratch -----------------------------------------------------------------
