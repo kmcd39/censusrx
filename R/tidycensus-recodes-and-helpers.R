@@ -489,8 +489,13 @@ acs.households.by.income.recode <- function(x
 #'
 #' (B01001 universe is Total Population)
 #'
+#' @param larger.age.bucket.recode Recodes to larger age buckets, with "prime
+#'   working age" population (25-54) separated out, along with 65+ and under 18
+#'   and in-betweens.
+#'
 #' @export acs.pop.age.recode
-acs.pop.age.recode <- function(x) {
+acs.pop.age.recode <- function(x
+                               ,larger.age.bucket.recode = F) {
 
 
   # drop aggs & remove Total: prefix
@@ -522,6 +527,18 @@ acs.pop.age.recode <- function(x) {
       label,
       levels = unique(lbls$label)
     ))
+
+  if(larger.age.bucket.recode)
+    ages <- ages %>%
+    mutate(
+      recode =
+        case_when(
+          grepl('Under 5|5 to 9|10 to 14|15 to 17', label) ~ 'Under 18'
+          ,grepl('18 and 19|^20|^21|22 to 24', label) ~ '18 to 24'
+          ,grepl('55 to 59|60 and 61|62 to 64', label) ~ '55 to 64'
+          ,grepl('65 and 66|67 to 69|70 to 74|75 to 79|80 to 84|85 and over', label) ~ 'Over 65'
+          ,TRUE ~ '25 to 54 ("prime working age")'
+        ))
 
   return(ages)
 
