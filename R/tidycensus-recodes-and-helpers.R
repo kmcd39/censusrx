@@ -538,7 +538,16 @@ acs.pop.age.recode <- function(x
           ,grepl('55 to 59|60 and 61|62 to 64', label) ~ '55 to 64'
           ,grepl('65 and 66|67 to 69|70 to 74|75 to 79|80 to 84|85 and over', label) ~ 'Over 65'
           ,TRUE ~ '25 to 54 ("prime working age")'
-        ))
+        )) %>%
+    mutate(recode =
+             factor(recode,
+                    levels = c(
+                      'Under 18'
+                      ,'18 to 24'
+                      ,'25 to 54 ("prime working age")'
+                      ,'55 to 64'
+                      ,'Over 65'
+                    )))
 
   return(ages)
 
