@@ -192,6 +192,83 @@ gett.census.totals <- function(states, years
 
 
 
+
+#' get.all.rentals.by.price.lvl
+#'
+#' ACS by default includes "vacant" and "occupied" housing units separately in
+#' many tables. This function wraps the recode functions for rentals by price
+#' tables:
+#'
+#' * B25056 (universe: renter-occupied housing units)
+#'
+#' * B25061 (universe: Vacant-for-rent and Rented, Not Occupied Housing Units)
+#'
+#' @export get.all.rentals.by.price.lvl
+get.all.rentals.by.price.lvl <- function( states
+                                          ,years
+                                          ,geo
+                                          ,survey = 'acs5') {
+
+  require(tidyverse)
+
+  params <- expand.grid(states, years)
+
+  occ.rent <- map2_dfr( params[[1]], params[[2]]
+                    ,~{ tidycensus::get_acs(
+                      geography = geo
+                      ,table = 'B25056'
+                      ,state = .x
+                      #,county = substr(., 3,5)
+                      ,year = .y
+                      ,survey = survey
+                      ,geometry = F
+                      ,cache_table = T
+                    ) %>%
+                        mutate(yr = .y
+                        ) %>%
+                        rename_with( tolower )
+                    }) %>%
+    select(-name) %>%
+    mutate(var = extract.acs.var(variable))
+
+  vac.rent <- map2_dfr( params[[1]], params[[2]]
+                        ,~{ tidycensus::get_acs(
+                          geography = geo
+                          ,table = 'B25061'
+                          ,state = .x
+                          #,county = substr(., 3,5)
+                          ,year = .y
+                          ,survey = survey
+                          ,geometry = F
+                          ,cache_table = T
+                        ) %>%
+                            mutate(yr = .y
+                            ) %>%
+                            rename_with( tolower )
+                        }) %>%
+    select(-name) %>%
+    mutate(var = extract.acs.var(variable))
+
+  occ.rent <- occ.rent %>%
+    acs.rentals.by.level.recode(
+      acs.tbl = 'B25056'
+    )
+  vac.rent <- vac.rent %>%
+    acs.rentals.by.level.recode(
+      acs.tbl = 'B25061'
+    )
+
+  rentals <- rbind(occ.rent
+                   ,vac.rent)
+
+  rentals <- rentals %>%
+    filter(!is.na(recode)) %>%
+    group_by(yr, geoid, recode) %>%
+    summarise(n = sum(estimate))
+
+  return(rentals)
+}
+
 # metawrapper -------------------------------------------------------------
 
 #' mass.acs.pull.tract.attrs

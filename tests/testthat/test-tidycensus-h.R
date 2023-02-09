@@ -9,7 +9,7 @@ devtools::load_all()
 meta <- pull.acs.metadata(year = 2019)
 
 
-# pull --------------------------------------------------------------------
+# vacancies --------------------------------------------------------------------
 
 
 vacancyts <- multiyr.acs.wrapper('B25034'
@@ -21,9 +21,7 @@ vacancyts <- multiyr.acs.wrapper('B25034'
 vacancyts %>%
   count(label, yr)
 
-
-
-# recode ------------------------------------------------------------------
+## recode ------------------------------------------------------------------
 
 # ?acs.bldg.age.recode
 
@@ -81,8 +79,6 @@ tmp %>%
 
 # commutes ----------------------------------------------------------------
 
-
-
 commutes <- multiyr.acs.wrapper('B08006'
                               ,state = 9
                               , geo = 'county'
@@ -110,6 +106,10 @@ if(!is.null(time.col))
   facet_wrap(vars(!!.tc))
 
 
-tmp
-#devtools::install_github('kmcd39/regionprofileR')
-regionprofileR::
+
+# test rent price levels --------------------------------------------------
+
+get.all.rentals.by.price.lvl(37, 2021,'county')
+
+
+

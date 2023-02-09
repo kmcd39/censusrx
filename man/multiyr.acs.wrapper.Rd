@@ -8,7 +8,7 @@ multiyr.acs.wrapper(
   tables,
   states,
   geo,
-  years = c(2019),
+  years,
   metadata = NULL,
   cache = T,
   survey = "acs5"

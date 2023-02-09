@@ -40,7 +40,7 @@ extract.acs.var <- function(x) {
 multiyr.acs.wrapper <- function( tables
                                  , states
                                  , geo
-                                 , years = c(2019)
+                                 , years
                                  , metadata = NULL
                                  ,cache = T
                                  ,survey = 'acs5') {
@@ -104,6 +104,7 @@ pull.acs.metadata <- function(year
 
   return(meta)
 }
+
 
 
 # recoding fcns -----------------------------------------------------------
@@ -392,6 +393,94 @@ acs.commute.recode <- function(x
   return(commutes)
 }
 
+
+#' acs.rentals.by.level.recode
+#'
+#' Recodes table B25056 (universe: renter-occupied housing units) or table
+#' B25061 (universe: Vacant-for-rent and Rented, Not Occupied Housing Units)
+#'
+#' @export acs.rentals.by.level.recode
+acs.rentals.by.level.recode <- function(x
+                                        ,acs.tbl = c('B25056', 'B25061')
+                                        ,filter.aggregates = T) {
+
+  acs.tbl <- acs.tbl[1]
+
+  if(filter.aggregates &
+     acs.tbl == 'B25056')
+    x <- x %>% filter(!var %in% c(1,2) )
+
+  if(filter.aggregates &
+     acs.tbl == 'B25061')
+    x <- x %>% filter(!var %in% 1)
+
+
+  if(acs.tbl == 'B25056')
+    x <- x %>%
+      mutate(recode =
+               case_when(
+                 var %in% c(3:19) ~ 'Below $1,000'
+                 ,var %in% c(20:22) ~ '$1,000 - $2,000'
+                 ,var %in% c(23:26) ~ 'Above $2,000'
+               )
+      )
+  if(acs.tbl == 'B25061')
+    x <- x %>%
+      mutate(recode =
+               case_when(
+                 var %in% c(3:19-1) ~ 'Below $1,000' # the encodings are always 1 lower on this table.
+                 ,var %in% c(20:22-1) ~ '$1,000 - $2,000'
+                 ,var %in% c(23:26-1) ~ 'Above $2,000'
+               )
+      )
+
+  x <- x %>%
+    mutate(recode =
+             factor(
+               recode,
+               levels = c(
+                 'Below $1,000'
+                 ,'$1,000 - $2,000'
+                 ,'Above $2,000'
+               )
+             ))
+
+  return(x)
+}
+
+
+
+#' acs.households.by.income.recode
+#'
+#' Recodes table B19001, Household Income, universe: all households.
+#'
+#' @export acs.households.by.income.recode
+acs.households.by.income.recode <- function(x
+                                            ,filter.aggregates = T) {
+
+
+  if(filter.aggregates)
+    x <- x %>% filter(!var %in% 1)
+
+  x <- x %>%
+    mutate(recode =
+             case_when(
+               var %in% c(2:9) ~ 'Below $40k'
+               ,var %in% c(10:13) ~ '$40k - $100k'
+               ,var %in% c(14:17) ~ 'Above $100k'
+             )
+    ) %>%
+    mutate(recode = factor(
+      recode,
+      levels = c(
+        'Below $40k'
+        ,'$40k - $100k'
+        ,'Above $100k'
+      )
+    ))
+
+  return(x)
+}
 
 
 # scratch -----------------------------------------------------------------
