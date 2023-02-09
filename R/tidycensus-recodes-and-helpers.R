@@ -483,6 +483,50 @@ acs.households.by.income.recode <- function(x
 }
 
 
+#' acs.pop.age.recode
+#'
+#' Recode table B01001 to remove gender disaggregation and agg to ages.
+#'
+#' (B01001 universe is Total Population)
+#'
+#' @export acs.pop.age.recode
+acs.pop.age.recode <- function(x) {
+
+
+  # drop aggs & remove Total: prefix
+  ages <- x %>%
+    filter(grepl('years', label)) %>%
+    mutate(label =
+             gsub('^Total: ', '', label))
+
+  # remove gender & remove redundant "years" suffix
+  ages <- ages %>%
+    mutate(label =
+             gsub('^Male: |^Female: ', '', label)) %>%
+    mutate(label =
+             gsub(' years', '', label))
+
+  # extract var/label for factor order
+  lbls <- ages %>%
+    select(variable, var, label) %>%
+    distinct() %>%
+    arrange(var)
+
+  # agg to just age
+  ages <- ages %>%
+    filter(geoid == '37055') %>%
+    group_by(yr, geoid, label) %>%
+    summarise(n = sum(estimate)) %>%
+    ungroup() %>%
+    mutate(label = factor(
+      label,
+      levels = unique(lbls$label)
+    ))
+
+  return(ages)
+
+}
+
 # scratch -----------------------------------------------------------------
 
 
