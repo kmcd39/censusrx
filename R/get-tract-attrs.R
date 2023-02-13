@@ -35,6 +35,7 @@ get.tract.attrs <- function( state,
   # only get totals and medians; others aren't useful as 1-row/tract
   ctts <- censusrx::gett.census.totals(
     states = state
+    ,cofps = cofps
     ,years = yr
     ,geo = 'tract'
   )
@@ -48,6 +49,7 @@ get.tract.attrs <- function( state,
 
   acm <- censusrx::pull.tidycensus.median.tables(
     states = state
+    ,cofps = cofps
     ,years = yr
     ,geo = 'tract'
   )
@@ -68,7 +70,7 @@ get.tract.attrs <- function( state,
       ,full_join
     )
 
-  # filter to counties (b/c those pulls are statewide)
+  # filter to counties (pulls used to be statewide, should be extraneous)
   attrs <- attrs %>%
     filter(substr(geoid, 3, 5) %in%
              cofps)

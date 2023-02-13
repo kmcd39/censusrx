@@ -4,7 +4,7 @@
 \alias{commute.times.by.mode}
 \title{commute.times.by.mode}
 \usage{
-commute.times.by.mode(geo = "county", state, year = 2019)
+commute.times.by.mode(geo = "county", state, cofps = NULL, year = 2019)
 }
 \arguments{
 \item{geo}{geography type, passed to tidycensus. Default is county. Not

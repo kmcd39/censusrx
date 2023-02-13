@@ -17,8 +17,9 @@
 #'
 #' @export commute.times.by.mode
 commute.times.by.mode <- function( geo = 'county'
-                                         ,state
-                                         ,year = 2019) {
+                                   ,state
+                                   ,cofps = NULL
+                                   ,year = 2019) {
 
 
   #browser()
@@ -28,7 +29,7 @@ commute.times.by.mode <- function( geo = 'county'
     geography = geo
     ,table = 'B08136'
     ,year = year
-    #,county = cofps
+    ,county = cofps
     ,state = state
     ,cache_table = T
   ) %>%
@@ -101,7 +102,7 @@ commute.times.by.mode <- function( geo = 'county'
       geography = geo
       ,table = 'B08006'
       ,year = year
-      #,county = cofps
+      ,county = cofps
       ,state = state
       ,cache_table = T
     ) %>%

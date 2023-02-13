@@ -9,15 +9,17 @@
   years,
   geo = "tract",
   tbls = c("B19013", "B25058", "B25077"),
+  cofps = NULL,
   survey = "acs5"
 )
 }
 \arguments{
-\item{states}{vector of state FIPS or 2-letters}
+\item{states, geo, years}{passed to \code{tidycensus::get_acs}. There is one get_acs
+call for every combination of table and years.}
 
-\item{years}{vector of years}
-
-\item{geo}{selection geography, passed onto \code{tidycensus}}
+\item{cofps}{countyfp codes passed to \code{tidycensus::get_acs.} Note may note
+work with all geographies or when multiple states are queried. NULL by
+get all geographies by type within \code{states}.}
 }
 \description{
 Pulls median tables, like hh income and contract rent:

@@ -36,6 +36,7 @@ ctts <- censusrx::gett.census.totals(
   states = 37
   ,years = 2021
   ,geo = 'tract'
+  ,cofps = c('055', '053')
 )
 
 ctts
@@ -44,6 +45,7 @@ acl <- censusrx::tidycensus2recoded.tblList(
   states = 37
   ,years = 2021
   ,geo = 'tract'
+  ,cofps = c('055', '053')
 )
 
 names(acl)
@@ -75,13 +77,13 @@ testthat::expect_equal(
 )
 
 
-
 ## median value checks -----------------------------------------------------
 
 acm <- censusrx::pull.tidycensus.median.tables(
   states = 37
   ,years = 2021
   ,geo = 'tract'
+  ,cofps = c('055', '053')
 )
 
 names(acm)
@@ -106,7 +108,6 @@ check <- check %>%
 testthat::expect_equal(
   check$estimate, check$n
 )
-
 
 # commute shares check ----------------------------------------------------
 

@@ -13,34 +13,39 @@ meta <- pull.acs.metadata(year = 2019)
 
 
 vacancyts <- multiyr.acs.wrapper('B25034'
-                               ,state = 44
+                               ,state = 37
                                , geo = 'tract'
+                               ,years = 2019
                                ,metadata = meta
                                )
 
 vacancyts %>%
   count(label, yr)
 
-## recode ------------------------------------------------------------------
 
-# ?acs.bldg.age.recode
-
-vacancyts <- vacancyts %>%
-  acs.bldg.age.recode()
-
-tmp <- vacancyts %>%
-  group_by(geoid, yr, recode) %>%
-  summarise(n = sum(estimate))
-tmp$recode
+## specified counties ------------------------------------------------------
 
 
 # demos -------------------------------------------------------------------
 
+devtools::load_all()
 
 demots <- multiyr.acs.wrapper('B03002'
                               ,state = 44
+                              ,years = 2019
                               , geo = 'county subdivision'
                               ,metadata = meta)
+
+# only some counties
+
+demots <- multiyr.acs.wrapper('B03002'
+                              ,state = 44
+                              ,cofps = '001'
+                              ,years = 2019
+                              , geo = 'county subdivision'
+                              ,metadata = meta)
+
+
 
 tmp <- demots %>%
   acs.demographic.recode()
@@ -48,6 +53,7 @@ tmp <- demots %>%
 tmp <- tmp %>%
   group_by(yr, recode) %>%
   summarise(n = sum(estimate))
+
 tmp %>%
   ggplot( aes(x = recode
               ,y = n

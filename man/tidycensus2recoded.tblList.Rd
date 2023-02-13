@@ -9,25 +9,27 @@ tidycensus2recoded.tblList(
   years,
   geo = "tract",
   tbls = c("B03002", "B25034", "B25004", "B25070", "B08006"),
+  cofps = NULL,
   metadata = NULL,
   survey = "acs5"
 )
 }
 \arguments{
-\item{states}{vector of state FIPS or 2-letters}
+\item{states, geo, years}{passed to \code{tidycensus::get_acs}. There is one get_acs
+call for every combination of table and years.}
 
-\item{years}{vector of years}
+\item{cofps}{countyfp codes passed to \code{tidycensus::get_acs.} Note may note
+work with all geographies or when multiple states are queried. NULL by
+get all geographies by type within \code{states}.}
 
-\item{geo}{selection geography, passed onto \code{tidycensus}}
+\item{metadata}{To use for labels. Result of \code{pull.acs.metadata} or
+\code{tidycensus::load_variables}}
 }
 \description{
 Wrapper function to pull all categorical information for which there's recode
-functions written. Right now this includes:
-\itemize{
-\item B03002 (demographics; universe is Total Pop)
-\item B25034 (building age; universe is Housing Units)
-\item B25004 (vacant unit types; universe is Vacant Housing Units)
-\item B25070 (Rent burden counts; universe is Renter-occupied Housing Units)
-\item B08006 (Commute mode; universe is Workers 16 Years and Over)
-}
+functions written. Right now this includes: - B03002 (demographics; universe
+is Total Pop) - B25034 (building age; universe is Housing Units) - B25004
+(vacant unit types; universe is Vacant Housing Units) - B25070 (Rent burden
+counts; universe is Renter-occupied Housing Units) - B08006 (Commute mode;
+universe is Workers 16 Years and Over)
 }

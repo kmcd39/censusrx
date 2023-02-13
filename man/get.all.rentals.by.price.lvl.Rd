@@ -4,7 +4,7 @@
 \alias{get.all.rentals.by.price.lvl}
 \title{get.all.rentals.by.price.lvl}
 \usage{
-get.all.rentals.by.price.lvl(states, years, geo, survey = "acs5")
+get.all.rentals.by.price.lvl(states, years, geo, cofps = NULL, survey = "acs5")
 }
 \description{
 ACS by default includes "vacant" and "occupied" housing units separately in

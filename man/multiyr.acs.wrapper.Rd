@@ -9,6 +9,7 @@ multiyr.acs.wrapper(
   states,
   geo,
   years,
+  cofps = NULL,
   metadata = NULL,
   cache = T,
   survey = "acs5"
@@ -17,6 +18,10 @@ multiyr.acs.wrapper(
 \arguments{
 \item{states, geo, years}{passed to \code{tidycensus::get_acs}. There is one get_acs
 call for every combination of table and years.}
+
+\item{cofps}{countyfp codes passed to \code{tidycensus::get_acs.} Note may note
+work with all geographies or when multiple states are queried. NULL by
+get all geographies by type within \code{states}.}
 
 \item{metadata}{To use for labels. Result of \code{pull.acs.metadata} or
 \code{tidycensus::load_variables}}
