@@ -4,7 +4,7 @@
 \alias{pull.acs.metadata}
 \title{pull.acs.metadata}
 \usage{
-\method{pull}{acs.metadata}(year, dataset = "acs5", cache = T)
+pull.acs.metadata(year, dataset = "acs5", cache = T)
 }
 \description{
 Pulls ACS metadata and cleans labels.

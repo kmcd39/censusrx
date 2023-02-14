@@ -4,7 +4,7 @@
 \alias{extract.acs.var}
 \title{extract.acs.var}
 \usage{
-\method{extract}{acs.var}(x)
+extract.acs.var(x)
 }
 \description{
 From acs table with Btable#_var# format, extract the variable. Takes the

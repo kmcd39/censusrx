@@ -4,7 +4,7 @@
 \alias{pull.tidycensus.median.tables}
 \title{pull.tidycensus.median.tables}
 \usage{
-\method{pull}{tidycensus.median.tables}(
+pull.tidycensus.median.tables(
   states,
   years,
   geo = "tract",
