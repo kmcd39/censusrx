@@ -4,6 +4,8 @@
 #' across regions and variables. Assumes columns `geoid`, `variable`, and `year`, as from data
 #' retrieved from tidycensus with minimal processing (add year and rename tolower).
 #'
+#' TODO make the columns variable.
+#'
 #' @param x dataframe with `geoid`, `variable`, and `year` columns.
 #'
 #' @export get.cagr.comparison
@@ -23,12 +25,12 @@ get.cagr.comparison <- function(
                   ( 1 / (year - lag(year)) )
               ) - 1
     ) %>%
-    ungroup() %>%
     mutate(period =
              paste0(
                lag(year), ' - ', year )
            ,.after = year
     ) %>%
-    filter(year == max(year))
+    ungroup() %>%
+    filter(!is.na(ch))
 
 }

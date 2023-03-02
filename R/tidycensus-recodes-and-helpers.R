@@ -523,7 +523,6 @@ acs.pop.age.recode <- function(x
 
   # agg to just age
   ages <- ages %>%
-    filter(geoid == '37055') %>%
     group_by(yr, geoid, label) %>%
     summarise(n = sum(estimate)) %>%
     ungroup() %>%
