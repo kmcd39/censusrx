@@ -107,6 +107,7 @@ tidycensus2recoded.tblList <- function(states, years
 #' Pulls median tables, like hh income and contract rent:
 #' - B19013 (median household income; universe is households)
 #' - B25058 (median contract rent; universe is "Renter-occupied Housing Units Paying Cash Rent")
+#' - B25105 (median monthly housing costs; universe is "Occupied Housing Units With Monthly Housing Costs")
 #' - B25077 (median home value; universe is owner-occupied housing units)
 #'
 #' @inheritParams tidycensus2recoded.tblList
@@ -119,6 +120,7 @@ pull.tidycensus.median.tables <- function(
     ,tbls =
       c('B19013' # hh inc
         ,'B25058' # c rent
+        ,'B25105' # median monthly housing costs
         ,'B25077' # median home value
       )
     ,cofps = NULL
@@ -136,7 +138,6 @@ pull.tidycensus.median.tables <- function(
               ,survey = survey
             ) ) %>%
     setNames(tbls)
-
 
   # rename estimate to N to match other tbls
   mx <- map(mx, ~rename(.x, n = estimate))

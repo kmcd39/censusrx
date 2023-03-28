@@ -109,6 +109,32 @@ testthat::expect_equal(
   check$estimate, check$n
 )
 
+
+# check median monthly housing costs
+acm$B25105
+
+check <- tidycensus::get_acs(
+  table = 'B25105'
+  ,year = yr
+  ,state = state
+  ,county = cofps
+  ,geography = 'tract'
+  ,cache_table = T
+) %>%
+  rename_with(tolower) %>%
+  select(-name) %>%
+  left_join(metadata[c('name', 'label')]
+            , by = c('variable' = 'name'))
+
+check <- check %>%
+  left_join(acm$B25105)
+
+# estimate is from tidycensus direct pull above; n is from helper function
+testthat::expect_equal(
+  check$estimate, check$n
+)
+
+
 # commute shares check ----------------------------------------------------
 
 names(acl)

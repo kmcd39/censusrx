@@ -14,3 +14,6 @@ Relatively inflexible function that gets change, percent change, and CAGR
 across regions and variables. Assumes columns \code{geoid}, \code{variable}, and \code{year}, as from data
 retrieved from tidycensus with minimal processing (add year and rename tolower).
 }
+\details{
+TODO make the columns variable.
+}

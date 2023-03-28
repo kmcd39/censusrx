@@ -4,11 +4,11 @@
 \alias{pull.tidycensus.median.tables}
 \title{pull.tidycensus.median.tables}
 \usage{
-pull.tidycensus.median.tables(
+\method{pull}{tidycensus.median.tables}(
   states,
   years,
   geo = "tract",
-  tbls = c("B19013", "B25058", "B25077"),
+  tbls = c("B19013", "B25058", "B25105", "B25077"),
   cofps = NULL,
   survey = "acs5"
 )
@@ -26,6 +26,7 @@ Pulls median tables, like hh income and contract rent:
 \itemize{
 \item B19013 (median household income; universe is households)
 \item B25058 (median contract rent; universe is "Renter-occupied Housing Units Paying Cash Rent")
+\item B25105 (median monthly housing costs; universe is "Occupied Housing Units With Monthly Housing Costs")
 \item B25077 (median home value; universe is owner-occupied housing units)
 }
 }
