@@ -11,7 +11,7 @@ devtools::load_all()
 
 
 state <- 37
-cofps <- c('053', '055')
+cofps <- c('159')
 yr <- 2021
 
 
@@ -20,23 +20,24 @@ yr <- 2021
 
 ctimes <- commute.times.by.mode(
   geo = 'county'
+  ,cofp = cofps
   ,state = 37
   ,year = yr
 )
 
-ctimes %>%
-  filter(geoid %in% '37001')
+ctimes
 
-# NA aggregate commute time for Dare county
+# NA aggregate commute time for area
 tidycensus::get_acs(
   geography = 'county'
   ,table = 'B08136'
   ,year = 2021
-  ,county = '055'
-  ,state = 37
+  ,county = cofps
+  ,state = state
   ,cache_table = T
 )
 
+# but compare for
 
 # compare state pull to single county
 

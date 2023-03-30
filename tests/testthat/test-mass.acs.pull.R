@@ -28,23 +28,45 @@ ctsf <- tigris::tracts(
   select(geoid, aland, geometry)
 
 
-# censusrx pulls ----------------------------------------------------------
 
-devtools::load_all()
+# check tots --------------------------------------------------------------
+
 
 ctts <- censusrx::gett.census.totals(
   states = 37
   ,years = 2021
-  ,geo = 'tract'
+  ,geo = 'county'
   ,cofps = c('055', '053')
 )
 
 ctts
 
+
+check <- tidycensus::get_acs(
+  geography = 'county'
+  ,year = 2021
+  ,state = 37
+  ,county =  c('055', '053')
+  ,variables = c(pop2 = 'B01001_001')
+) %>% rename_with(tolower)
+
+check <- ctts %>%
+  left_join(
+    check
+  )
+
+testthat::expect_equal(
+  check$pop, check$estimate
+)
+
+# censusrx tblList pull ----------------------------------------------------------
+
+devtools::load_all()
+
 acl <- censusrx::tidycensus2recoded.tblList(
   states = 37
   ,years = 2021
-  ,geo = 'tract'
+  ,geo = 'county'
   ,cofps = c('055', '053')
 )
 
@@ -57,7 +79,7 @@ acs.demographic.recode
 
 # sum of demographic groups should be == total pop
 check <- acl$B03002 %>%
-  group_by(yr, geoid) %>%
+  group_by(year, geoid) %>%
   summarise(n = sum(n)) %>%
   left_join(ctts)
 
@@ -68,7 +90,7 @@ testthat::expect_equal(
 ## building age check  ------------------------------------------------------
 
 check <- acl$B25034 %>%
-  group_by(yr, geoid) %>%
+  group_by(year, geoid) %>%
   summarise(n = sum(n)) %>%
   left_join(ctts)
 
@@ -87,6 +109,7 @@ acm <- censusrx::pull.tidycensus.median.tables(
 )
 
 names(acm)
+acm
 
 check <- tidycensus::get_acs(
   table = 'B19013'
@@ -102,13 +125,12 @@ check <- tidycensus::get_acs(
             , by = c('variable' = 'name'))
 
 check <- check %>%
-  left_join(acm$B19013)
+  left_join(acm$med.hhinc)
 
 # estimate is from tidycensus direct pull above; n is from helper function
 testthat::expect_equal(
   check$estimate, check$n
 )
-
 
 # check median monthly housing costs
 acm$B25105
@@ -127,7 +149,7 @@ check <- tidycensus::get_acs(
             , by = c('variable' = 'name'))
 
 check <- check %>%
-  left_join(acm$B25105)
+  left_join(acm$med.hcosts)
 
 # estimate is from tidycensus direct pull above; n is from helper function
 testthat::expect_equal(
@@ -167,7 +189,7 @@ testthat::expect_equal(
 # totals from recoded table w aggregates pre-filtered should be equal to total i
 # just pulled for check
 check <- acl$B08006 %>%
-  group_by(yr, geoid) %>%
+  group_by(year, geoid) %>%
   summarise(n = sum(n)) %>%
   ungroup() %>%
   inner_join(
@@ -179,6 +201,34 @@ testthat::expect_equal(
   check$n, check$estimate
 )
 
+
+
+# test with cbsas ---------------------------------------------------------
+
+devtools::load_all()
+
+cbsapops <- censusrx::gett.census.totals(
+  years = 2021
+  ,geo = 'cbsa'
+  ,states = NULL
+)
+cbsapops
+
+
+check <- tidycensus::get_acs(
+   geography = 'cbsa'
+  ,year = 2021
+  ,variables = c(pop2 = 'B01001_001')
+) %>% rename_with(tolower)
+
+check <- cbsapops %>%
+  left_join(
+  check
+)
+
+testthat::expect_equal(
+  check$pop, check$estimate
+)
 
 # scracht and extra checks ------------------------------------------------
 

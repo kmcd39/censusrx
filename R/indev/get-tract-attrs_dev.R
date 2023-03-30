@@ -43,6 +43,7 @@ ctsf
 ctts <- censusrx::gett.census.totals(
   states = state
   ,years = yr
+  ,cofps = cofps
   ,geo = 'tract'
 )
 
@@ -58,6 +59,7 @@ ctts
 acm <- censusrx::pull.tidycensus.median.tables(
   states = state
   ,years = yr
+  ,cofps = cofps
   ,geo = 'tract'
 )
 

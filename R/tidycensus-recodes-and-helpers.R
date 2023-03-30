@@ -20,69 +20,6 @@ extract.acs.var <- function(x) {
 
 
 
-#' multiyr.acs.wrapper
-#'
-#' Wraps `tidycensus::get_acs` for multiple years, tables, and states.
-#' Structures long by geography, table, year. Maps through tables/years.
-#' Tidycensus vectorized over states.
-#'
-#' I'll need to figure out and maybe refine this function to work with
-#' reasonable combinations of states/geographies.
-#'
-#' @param table table to get from ACS; i.e., 'B01001.' See
-#'   `tidycensus::load_variables`
-#' @param states,geo,years passed to `tidycensus::get_acs`. There is one get_acs
-#'   call for every combination of table and years.
-#' @param cofps countyfp codes passed to `tidycensus::get_acs.` Note may note
-#'   work with all geographies or when multiple states are queried. NULL by
-#'   get all geographies by type within `states`.
-#' @param metadata To use for labels. Result of `pull.acs.metadata` or
-#'   `tidycensus::load_variables`
-#'
-#' @export multiyr.acs.wrapper
-multiyr.acs.wrapper <- function( tables
-                                 , states
-                                 , geo
-                                 , years
-                                 , cofps = NULL
-                                 , metadata = NULL
-                                 ,cache = T
-                                 ,survey = 'acs5') {
-
-  if( is.null(metadata))
-    metadata <- pull.acs.metadata(year = tail(years, 1))
-
-  #browser()
-  params <- expand.grid(tables, years)
-
-  x <- map2_dfr( params[[1]], params[[2]]
-                 , ~{tidycensus::get_acs(
-                   geography = geo
-                   ,table = .x
-                   ,year = .y
-                   ,county = cofps
-                   ,state = states
-                   ,survey = survey
-                   ,cache_table = cache
-                 ) %>%
-                     mutate(tabl = .x
-                            ,yr = .y
-                     ) %>%
-                     rename_with( tolower )
-                 })
-
-  x <- x %>% select(-name)
-
-  # add labels
-  x <- x %>%
-    left_join(metadata[c('name', 'label')]
-              , by = c('variable' = 'name')) %>%
-    mutate(var =
-             extract.acs.var(variable)
-           ,.after = tabl
-             )
-  return(x)
-}
 
 
 #' pull.acs.metadata
@@ -523,7 +460,7 @@ acs.pop.age.recode <- function(x
 
   # agg to just age
   ages <- ages %>%
-    group_by(yr, geoid, label) %>%
+    group_by(year, geoid, label) %>%
     summarise(n = sum(estimate)) %>%
     ungroup() %>%
     mutate(label = factor(

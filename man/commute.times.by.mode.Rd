@@ -7,8 +7,8 @@
 commute.times.by.mode(geo = "county", state, cofps = NULL, year = 2019)
 }
 \arguments{
-\item{geo}{geography type, passed to tidycensus. Default is county. Not
-not all geographies available for this pull.}
+\item{geo}{geography type, passed to tidycensus. Default is county. Not not
+all geographies available for this pull.}
 
 \item{state}{state fp or abrv.}
 
@@ -18,4 +18,9 @@ not all geographies available for this pull.}
 Rigid function: outputs a table for counties or other (larger) areas in a
 state with modeshare and avg. commute times for bus/car/trains/and total
 transit.
+}
+\details{
+An alternative for now to using this somewhat janky function is using commute
+shares from the \code{tidycensus2recoded.tblList} and pulling aggregate commute
+times, B08136 separately.
 }

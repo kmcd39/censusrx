@@ -4,14 +4,14 @@
 \alias{get.tract.attrs}
 \title{get.tract.attrs}
 \usage{
-get.tract.attrs(state, cofps, yr)
+get.tract.attrs(state, cofps, year, geo = "tract")
 }
 \arguments{
 \item{state}{state fp code}
 
 \item{cofps}{county fp codes (3-character)}
 
-\item{yr}{year.}
+\item{year}{year.}
 }
 \description{
 One massive function to pull a lot of frequently-used data points at the

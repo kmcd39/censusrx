@@ -1,62 +1,111 @@
 
-#' acs.tbl.index
-#'
-#' Reminds you what selected table names correspond to
-#'
-#' @export acs.tbl.index
-acs.tbl.index <- function(
-    tables =  c('B03002',
-                'B25034',
-                'B25004',
-                'B25070',
-                'B19013',
-                'B25058',
-                'B08006')
-    ,metadata = NULL
-    ,year = 2019) {
+# Multiyear ACS ---------------------------------------------------------------
 
-  require(tidyverse)
+
+#' multiyr.acs.wrapper
+#'
+#' Wraps `tidycensus::get_acs` for multiple years, tables, and states.
+#' Structures long by geography, table, year. Maps through tables/years.
+#' Tidycensus vectorized over states.
+#'
+#' I'll need to figure out and maybe refine this function to work with
+#' reasonable combinations of states/geographies.
+#'
+#' @param table table to get from ACS; i.e., 'B01001.' See
+#'   `tidycensus::load_variables`
+#' @param states,geo,years passed to `tidycensus::get_acs`. There is one get_acs
+#'   call for every combination of table and years.
+#' @param cofps countyfp codes passed to `tidycensus::get_acs.` Note may note
+#'   work with all geographies or when multiple states are queried. NULL by
+#'   get all geographies by type within `states`.
+#' @param metadata To use for labels. Result of `pull.acs.metadata` or
+#'   `tidycensus::load_variables`
+#'
+#' @export multiyr.acs.wrapper
+multiyr.acs.wrapper <- function( tables
+                                 , states
+                                 , geo
+                                 , years
+                                 , cofps = NULL
+                                 , metadata = NULL
+                                 ,cache = T
+                                 ,survey = 'acs5') {
 
   if( is.null(metadata))
-    metadata <- pull.acs.metadata(year = year)
+    metadata <- pull.acs.metadata(year = tail(years, 1))
 
-  metadata <- metadata %>%
-    mutate( table =
-              str_extract( name, '[^_]+')
-            ,concept = tolower(concept)
-    ) %>%
-    filter(table %in% tables ) %>%
-    select(table, concept) %>%
-    distinct()
+  #browser()
+  params <- expand.grid(tables, years)
 
-  return(metadata)
+  x <- map2_dfr( params[[1]], params[[2]]
+                 , ~{tidycensus::get_acs(
+                   geography = geo
+                   ,table = .x
+                   ,year = .y
+                   ,county = cofps
+                   ,state = states
+                   ,survey = survey
+                   ,cache_table = cache
+                 ) %>%
+                     mutate(tabl = .x
+                            ,year = .y
+                     ) %>%
+                     rename_with( tolower )
+                 })
+
+  x <- x %>% select(-name)
+
+  # add labels
+  x <- x %>%
+    left_join(metadata[c('name', 'label')]
+              , by = c('variable' = 'name')) %>%
+    mutate(var =
+             extract.acs.var(variable)
+           ,.after = tabl
+    )
+  return(x)
 }
+
+
+# mass pulls / wrappers ---------------------------------------------------
+
 
 
 #' tidycensus2recoded.tblList
 #'
 #' Wrapper function to pull all categorical information for which there's recode
-#' functions written. Right now this includes: - B03002 (demographics; universe
-#' is Total Pop) - B25034 (building age; universe is Housing Units) - B25004
-#' (vacant unit types; universe is Vacant Housing Units) - B25070 (Rent burden
-#' counts; universe is Renter-occupied Housing Units) - B08006 (Commute mode;
-#' universe is Workers 16 Years and Over)
+#' functions written. Right now this includes:
+#'
+#' - B03002 (demographics; universe is Total Pop)
+#'
+#' - B25034 (building age; universe is Housing Units)
+#'
+#' - B25004 (vacant unit types; universe is Vacant Housing Units)
+#'
+#' - B25070 (Rent burden counts; universe is Renter-occupied Housing Units)
+#'
+#'  - B08006 (Commute mode; universe is Workers 16 Years and Over)
 #'
 #' @inheritParams multiyr.acs.wrapper
 #'
 #' @export tidycensus2recoded.tblList
-tidycensus2recoded.tblList <- function(states, years
-                                         ,geo = 'tract'
-                                         ,tbls =
-                                           c('B03002',
-                                             'B25034',
-                                             'B25004',
-                                             'B25070',
-                                             'B08006')
-                                       ,cofps = NULL
-                                       ,metadata = NULL
-                                       ,survey = 'acs5'
-                                       ) {
+tidycensus2recoded.tblList <- function(
+    states = NULL
+    , years
+    ,geo = 'tract'
+    ,tbls =
+      c('B03002',
+        'B25034',
+        'B25004',
+        'B25070',
+        'B08006')
+    ,cofps = NULL
+    ,metadata = NULL
+    ,survey = 'acs5'
+) {
+
+  #browser()
+
   require(tidyverse)
   require(tidycensus)
 
@@ -90,9 +139,9 @@ tidycensus2recoded.tblList <- function(states, years
   # sum to recode, and add %s
   rx <- map(rx,
             ~{.x %>%
-                group_by(yr, geoid, recode) %>%
+                group_by(year, geoid, recode) %>%
                 summarise(n = sum(estimate)) %>%
-                group_by(yr, geoid) %>%
+                group_by(year, geoid) %>%
                 mutate(perc = n / sum(n)) %>%
                 ungroup()
             })
@@ -105,30 +154,34 @@ tidycensus2recoded.tblList <- function(states, years
 #' pull.tidycensus.median.tables
 #'
 #' Pulls median tables, like hh income and contract rent:
+#'
 #' - B19013 (median household income; universe is households)
+#'
 #' - B25058 (median contract rent; universe is "Renter-occupied Housing Units Paying Cash Rent")
+#'
 #' - B25105 (median monthly housing costs; universe is "Occupied Housing Units With Monthly Housing Costs")
+#'
 #' - B25077 (median home value; universe is owner-occupied housing units)
 #'
 #' @inheritParams tidycensus2recoded.tblList
 #'
 #' @export pull.tidycensus.median.tables
 pull.tidycensus.median.tables <- function(
-     states
+     states = NULL
     ,years
     ,geo = 'tract'
     ,tbls =
-      c('B19013' # hh inc
-        ,'B25058' # c rent
-        ,'B25105' # median monthly housing costs
-        ,'B25077' # median home value
+      c( med.hhinc = 'B19013' # hh inc
+        ,med.crent = 'B25058' # c rent
+        ,med.hcosts = 'B25105' # median monthly housing costs
+        ,med.hvalue = 'B25077' # median home value
       )
     ,cofps = NULL
     ,survey = 'acs5'
 ) {
   require(tidyverse)
 
-  mx <- map(tbls,
+  mx <- imap(tbls,
             ~multiyr.acs.wrapper(
               tables = .x
               ,geo = geo
@@ -136,8 +189,7 @@ pull.tidycensus.median.tables <- function(
               ,states = states
               ,cofps = cofps
               ,survey = survey
-            ) ) %>%
-    setNames(tbls)
+            ) )
 
   # rename estimate to N to match other tbls
   mx <- map(mx, ~rename(.x, n = estimate))
@@ -152,13 +204,13 @@ pull.tidycensus.median.tables <- function(
 #' gett.census.totals
 #'
 #' Gets totals for area. Like population, households, housing units, and land
-#' area. Wraps `tidycensus::get_acs`. 1 year at a time please.
+#' area. Wraps `tidycensus::get_acs`.
 #'
 #' @inheritParams tidycensus2recoded.tblList
 #'
 #' @export gett.census.totals
 gett.census.totals <- function(
-    states
+     states = NULL
     ,years
     ,geo = 'tract'
     ,cofps = NULL
@@ -166,7 +218,13 @@ gett.census.totals <- function(
 
   require(tidyverse)
 
-  params <- expand.grid(states, years)
+  #browser()
+
+  # use below to manage case wehre STATES = NULL
+  if(length(states) > 0)
+    params <- expand.grid(states, years)
+  else
+    params <- tibble(Var1 = list(NULL), Var2 = years)
 
   tots <- map2_dfr( params[[1]], params[[2]]
                     ,~{ tidycensus::get_acs(
@@ -184,7 +242,7 @@ gett.census.totals <- function(
                       ,geometry = F
                       ,cache_table = T
                     ) %>%
-                        mutate(yr = .y
+                        mutate(year = .y
                         ) %>%
                         rename_with( tolower )
                     }) %>%
@@ -234,7 +292,7 @@ get.all.rentals.by.price.lvl <- function( states
                       ,geometry = F
                       ,cache_table = T
                     ) %>%
-                        mutate(yr = .y
+                        mutate(year = .y
                         ) %>%
                         rename_with( tolower )
                     }) %>%
@@ -252,7 +310,7 @@ get.all.rentals.by.price.lvl <- function( states
                           ,geometry = F
                           ,cache_table = T
                         ) %>%
-                            mutate(yr = .y
+                            mutate(year = .y
                             ) %>%
                             rename_with( tolower )
                         }) %>%
@@ -273,7 +331,7 @@ get.all.rentals.by.price.lvl <- function( states
 
   rentals <- rentals %>%
     filter(!is.na(recode)) %>%
-    group_by(yr, geoid, recode) %>%
+    group_by(year, geoid, recode) %>%
     summarise(n = sum(estimate))
 
   return(rentals)

@@ -8,15 +8,18 @@
 #'
 #' @param state state fp code
 #' @param cofps county fp codes (3-character)
-#' @param yr year.
+#' @param year year.
 #'
 #' @export get.tract.attrs
 get.tract.attrs <- function( state,
                              cofps,
-                             yr) {
+                             year,
+                             geo = 'tract') {
 
   require(tidyverse)
   require(sf)
+
+  # browser()
 
   options(tigris_use_cache = TRUE)
 
@@ -25,7 +28,7 @@ get.tract.attrs <- function( state,
   ctsf <- tigris::tracts(
     state = state
     ,county = cofps
-    ,year = yr
+    ,year = year
   ) %>%
     rename_with(tolower) %>%
     select(geoid, aland, geometry)
@@ -36,36 +39,36 @@ get.tract.attrs <- function( state,
   ctts <- censusrx::gett.census.totals(
     states = state
     ,cofps = cofps
-    ,years = yr
+    ,years = year
     ,geo = 'tract'
   )
 
   # skip this; they're useful for separate analysis.
   #acl <- censusrx::tidycensus2recoded.tblList(
   #  states = state
-  #  ,years = yr
+  #  ,years = year
   #  ,geo = 'tract'
   #)
 
   acm <- censusrx::pull.tidycensus.median.tables(
     states = state
     ,cofps = cofps
-    ,years = yr
+    ,years = year
     ,geo = 'tract'
   )
 
   ## reduce totals and medians
 
-  # drop MOE and extra colms, useful names:
+  # drop MOE and extra colms, rename estimate column with name:
   acm <- acm %>%
-    map2( c('medhhinc', 'medcrent', 'medhomevalue')
-          ,~select(.x
-                   ,geoid, yr, !!.y := n)
+    imap( ~select(.x
+                  ,geoid, year, !!.y := n)
     )
 
   attrs <-
     purrr::reduce(
-      c(list(ctts, tibble(ctsf)[c('geoid', 'aland')])
+      c(list( ctts
+             ,tibble(ctsf)[c('geoid', 'aland')])
         , acm)
       ,full_join
     )
@@ -89,7 +92,7 @@ get.tract.attrs <- function( state,
   cown <- tidycensus::get_acs(
     geography = 'tract'
     ,variables = paste0('B08201_00', 1:6)
-    ,year = yr
+    ,year = year
     ,survey = 'acs5'
     ,state = state
     ,county = cofps
@@ -132,7 +135,7 @@ get.tract.attrs <- function( state,
   lf <- tidycensus::get_acs(
     geography = 'tract'
     ,table = 'B23025'
-    ,year = yr
+    ,year = year
     ,survey = 'acs5'
     ,state = state
     ,county = cofps
@@ -166,7 +169,7 @@ get.tract.attrs <- function( state,
     pivot_wider(values_from = estimate
                 ,names_from = lbl)
 
-  lf$geoid %>% duplicated() %>% sum()
+  # lf$geoid %>% duplicated() %>% sum()
 
   lf <- lf %>%
     mutate( lfpr =
@@ -186,7 +189,7 @@ get.tract.attrs <- function( state,
   tenure <- tidycensus::get_acs(
     geography = 'tract'
     ,table = 'B25003'
-    ,year = yr
+    ,year = year
     ,survey = 'acs5'
     ,state = state
     ,county = cofps
@@ -212,11 +215,11 @@ get.tract.attrs <- function( state,
   colnames(attrs)
 
   attrss <- attrs %>%
-    select(geoid, yr,
+    select(geoid, year,
            pop, n.hh,
            aland,
            n.hunits, occ.hunits,
-           medhhinc, medcrent, medhomevalue,
+           med.hhinc, med.crent, med.hcosts, med.hvalue,
            inLF, lfpr, n.unemployed, unemply.rate,
            nhh.zerocar, perc.no.car,
            rental.occ.hu, rental.rate
@@ -237,7 +240,6 @@ get.tract.attrs <- function( state,
     ))
 
   ## return
-
   attrs <- attrss %>%
     select(-aland)
 

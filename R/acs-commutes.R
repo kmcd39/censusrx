@@ -10,8 +10,13 @@
 #' state with modeshare and avg. commute times for bus/car/trains/and total
 #' transit.
 #'
-#' @param geo geography type, passed to tidycensus. Default is county. Not
-#'   not all geographies available for this pull.
+#' An alternative for now to using this somewhat janky function is using commute
+#' shares from the `tidycensus2recoded.tblList` and pulling aggregate commute
+#' times, B08136 separately.
+#'
+#'
+#' @param geo geography type, passed to tidycensus. Default is county. Not not
+#'   all geographies available for this pull.
 #' @param state state fp or abrv.
 #' @param year year
 #'

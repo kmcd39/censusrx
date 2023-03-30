@@ -4,7 +4,13 @@
 \alias{gett.census.totals}
 \title{gett.census.totals}
 \usage{
-gett.census.totals(states, years, geo = "tract", cofps = NULL, survey = "acs5")
+gett.census.totals(
+  states = NULL,
+  years,
+  geo = "tract",
+  cofps = NULL,
+  survey = "acs5"
+)
 }
 \arguments{
 \item{states, geo, years}{passed to \code{tidycensus::get_acs}. There is one get_acs
@@ -16,5 +22,5 @@ get all geographies by type within \code{states}.}
 }
 \description{
 Gets totals for area. Like population, households, housing units, and land
-area. Wraps \code{tidycensus::get_acs}. 1 year at a time please.
+area. Wraps \code{tidycensus::get_acs}.
 }

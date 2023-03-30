@@ -5,10 +5,11 @@
 \title{pull.tidycensus.median.tables}
 \usage{
 \method{pull}{tidycensus.median.tables}(
-  states,
+  states = NULL,
   years,
   geo = "tract",
-  tbls = c("B19013", "B25058", "B25105", "B25077"),
+  tbls = c(med.hhinc = "B19013", med.crent = "B25058", med.hcosts = "B25105", med.hvalue
+    = "B25077"),
   cofps = NULL,
   survey = "acs5"
 )
@@ -23,6 +24,8 @@ get all geographies by type within \code{states}.}
 }
 \description{
 Pulls median tables, like hh income and contract rent:
+}
+\details{
 \itemize{
 \item B19013 (median household income; universe is households)
 \item B25058 (median contract rent; universe is "Renter-occupied Housing Units Paying Cash Rent")

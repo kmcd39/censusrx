@@ -5,7 +5,7 @@
 \title{tidycensus2recoded.tblList}
 \usage{
 tidycensus2recoded.tblList(
-  states,
+  states = NULL,
   years,
   geo = "tract",
   tbls = c("B03002", "B25034", "B25004", "B25070", "B08006"),
@@ -27,9 +27,14 @@ get all geographies by type within \code{states}.}
 }
 \description{
 Wrapper function to pull all categorical information for which there's recode
-functions written. Right now this includes: - B03002 (demographics; universe
-is Total Pop) - B25034 (building age; universe is Housing Units) - B25004
-(vacant unit types; universe is Vacant Housing Units) - B25070 (Rent burden
-counts; universe is Renter-occupied Housing Units) - B08006 (Commute mode;
-universe is Workers 16 Years and Over)
+functions written. Right now this includes:
+}
+\details{
+\itemize{
+\item B03002 (demographics; universe is Total Pop)
+\item B25034 (building age; universe is Housing Units)
+\item B25004 (vacant unit types; universe is Vacant Housing Units)
+\item B25070 (Rent burden counts; universe is Renter-occupied Housing Units)
+\item B08006 (Commute mode; universe is Workers 16 Years and Over)
+}
 }

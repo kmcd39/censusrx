@@ -30,7 +30,6 @@ get.cagr.comparison <- function(
                lag(year), ' - ', year )
            ,.after = year
     ) %>%
-    ungroup() %>%
-    filter(!is.na(ch))
+    ungroup()
 
 }
