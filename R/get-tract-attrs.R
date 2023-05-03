@@ -1,14 +1,16 @@
 #' get.tract.attrs
 #'
 #' One massive function to pull a lot of frequently-used data points at the
-#' tract level for a given year and set of counties. Will return a one-row-by
-#' tract dataframe.
+#' tract or block group level for a given year and set of counties. Will return
+#' a one-row-by tract (or BG) dataframe.
 #'
-#' Other acs pulls that are not 1-row by tract can be from `censusrx::tidycensus2recoded.tblList`
+#' Other acs pulls that are not 1-row by tract can be from
+#' `censusrx::tidycensus2recoded.tblList`
 #'
 #' @param state state fp code
 #' @param cofps county fp codes (3-character)
 #' @param year year.
+#' @param geo 'tract' (default) or "block group"
 #'
 #' @export get.tract.attrs
 get.tract.attrs <- function( state,
@@ -25,11 +27,19 @@ get.tract.attrs <- function( state,
 
   # geos -------------------------------------------------------------------------
 
+  if(geo == 'tract') {
   ctsf <- tigris::tracts(
     state = state
     ,county = cofps
-    ,year = year
-  ) %>%
+    ,year = year)
+  } else if(geo == 'block group') {
+    ctsf <- tigris::block_groups(
+      state = state
+      ,county = cofps
+      ,year = year)
+  }
+
+  ctsf <- ctsf %>%
     rename_with(tolower) %>%
     select(geoid, aland, geometry)
 
@@ -40,7 +50,7 @@ get.tract.attrs <- function( state,
     states = state
     ,cofps = cofps
     ,years = year
-    ,geo = 'tract'
+    ,geo = geo
   )
 
   # skip this; they're useful for separate analysis.
@@ -54,7 +64,7 @@ get.tract.attrs <- function( state,
     states = state
     ,cofps = cofps
     ,years = year
-    ,geo = 'tract'
+    ,geo = geo
   )
 
   ## reduce totals and medians
@@ -90,7 +100,7 @@ get.tract.attrs <- function( state,
   # B08201_006	Total: 4 or more vehicles available
 
   cown <- tidycensus::get_acs(
-    geography = 'tract'
+    geography = geo
     ,variables = paste0('B08201_00', 1:6)
     ,year = year
     ,survey = 'acs5'
@@ -133,7 +143,7 @@ get.tract.attrs <- function( state,
   ## LF and emply ------------------------------------------------------------
 
   lf <- tidycensus::get_acs(
-    geography = 'tract'
+    geography = geo
     ,table = 'B23025'
     ,year = year
     ,survey = 'acs5'
@@ -187,7 +197,7 @@ get.tract.attrs <- function( state,
 
   # B25003; universe is Occupied Housing Units
   tenure <- tidycensus::get_acs(
-    geography = 'tract'
+    geography = geo
     ,table = 'B25003'
     ,year = year
     ,survey = 'acs5'

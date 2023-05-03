@@ -7,12 +7,13 @@
 get.cagr.comparison(x)
 }
 \arguments{
-\item{x}{dataframe with \code{geoid}, \code{variable}, and \code{year} columns.}
+\item{x}{dataframe with \code{geoid}, \code{variable}, \code{year}, and \code{estimate} columns.}
 }
 \description{
 Relatively inflexible function that gets change, percent change, and CAGR
-across regions and variables. Assumes columns \code{geoid}, \code{variable}, and \code{year}, as from data
-retrieved from tidycensus with minimal processing (add year and rename tolower).
+across regions and variables. Assumes columns \code{geoid}, \code{variable}, \code{year},
+and \code{estimate}, as from data retrieved from tidycensus with minimal
+processing (add year and rename tolower).
 }
 \details{
 TODO make the columns variable.

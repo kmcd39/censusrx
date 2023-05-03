@@ -59,7 +59,7 @@ cown <- tidycensus::get_acs(
 ) %>%
   select(-NAME) %>%
   rename_with(tolower)
-meta
+
 cown <- cown %>%
   left_join(
     select(metadata
@@ -84,6 +84,26 @@ test_that("cattrs perc no cars",
             ,cown$estimate_B08201_002 / cown$estimate_B08201_001)
           })
 
+
+# test w BGs --------------------------------------------------------------
+
+
+bttrs <- get.tract.attrs(state = state
+                         ,cofps = cofps
+                         ,year = yr
+                         ,geo = 'block group')
+attrs$geoid %>% nchar()
+attrs %>% nrow()
+
+bttrs$geoid %>% nchar()
+bttrs %>% nrow()
+
+
+test_that("cattrs n no cars",
+          {expect_equal(
+             unique(nchar(bttrs$geoid))
+            ,12)
+          })
 
 
 # scratch -----------------------------------------------------------------

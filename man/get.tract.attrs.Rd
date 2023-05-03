@@ -12,12 +12,15 @@ get.tract.attrs(state, cofps, year, geo = "tract")
 \item{cofps}{county fp codes (3-character)}
 
 \item{year}{year.}
+
+\item{geo}{'tract' (default) or "block group"}
 }
 \description{
 One massive function to pull a lot of frequently-used data points at the
-tract level for a given year and set of counties. Will return a one-row-by
-tract dataframe.
+tract or block group level for a given year and set of counties. Will return
+a one-row-by tract (or BG) dataframe.
 }
 \details{
-Other acs pulls that are not 1-row by tract can be from \code{censusrx::tidycensus2recoded.tblList}
+Other acs pulls that are not 1-row by tract can be from
+\code{censusrx::tidycensus2recoded.tblList}
 }
