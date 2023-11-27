@@ -21,6 +21,8 @@ tract or block group level for a given year and set of counties. Will return
 a one-row-by tract (or BG) dataframe.
 }
 \details{
+TODO: could be add an argument for keeping MOEs
+
 Other acs pulls that are not 1-row by tract can be from
 \code{censusrx::tidycensus2recoded.tblList}
 }

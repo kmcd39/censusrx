@@ -87,7 +87,6 @@ test_that("cattrs perc no cars",
 
 # test w BGs --------------------------------------------------------------
 
-
 bttrs <- get.tract.attrs(state = state
                          ,cofps = cofps
                          ,year = yr
@@ -98,26 +97,54 @@ attrs %>% nrow()
 bttrs$geoid %>% nchar()
 bttrs %>% nrow()
 
-
-test_that("cattrs n no cars",
+test_that("nbhd.attrs.did get block groups when asked?",
           {expect_equal(
              unique(nchar(bttrs$geoid))
             ,12)
           })
 
 
+
+## in lf at bg level -------------------------------------------------------
+
+bttrs
+
+check.lf <- tidycensus::get_acs(
+  geography = 'block group'
+  ,table = 'B23025'
+  ,year = yr
+  ,survey = 'acs5'
+  ,state = state
+  ,county = cofps
+) %>%
+  select(-NAME) %>%
+  rename_with(tolower)
+
+check.lf <- check.lf %>%
+  select( -moe ) %>%
+  pivot_wider(values_from = estimate
+              ,names_from = variable) %>%
+  mutate( lfpr =
+            B23025_002 / B23025_001
+          ,unemply.rate =
+            B23025_005 / B23025_002
+  )
+
+check.lf
+
+
+test_that("nbhd.attrs.BGs LF check",
+          {expect_equal(
+             bttrs$lfpr
+            ,check.lf$lfpr
+            )
+          })
+
+test_that("nbhd.attrs.BGs unemployment rate check",
+          {expect_equal(
+            bttrs$unemply.rate
+            ,check.lf$unemply.rate )
+          })
+
+
 # scratch -----------------------------------------------------------------
-
-# pick function???
-
-df <- tibble(
-  x = c(3, 2, 2, 2, 1),
-  y = c(0, 2, 1, 1, 4),
-  z1 = c("a", "a", "a", "b", "a"),
-  z2 = c("c", "d", "d", "a", "c")
-)
-df
-
-# `pick()` provides a way to select a subset of your columns using
-# tidyselect. It returns a data frame.
-df %>% mutate(cols = pick(x, y))

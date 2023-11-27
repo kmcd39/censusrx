@@ -4,6 +4,8 @@
 #' tract or block group level for a given year and set of counties. Will return
 #' a one-row-by tract (or BG) dataframe.
 #'
+#' TODO: could be add an argument for keeping MOEs
+#'
 #' Other acs pulls that are not 1-row by tract can be from
 #' `censusrx::tidycensus2recoded.tblList`
 #'
@@ -28,24 +30,25 @@ get.tract.attrs <- function( state,
   # geos -------------------------------------------------------------------------
 
   if(geo == 'tract') {
-  ctsf <- tigris::tracts(
-    state = state
-    ,county = cofps
-    ,year = year)
+    nbhds <- tigris::tracts(
+      state = state
+      ,county = cofps
+      ,year = year)
   } else if(geo == 'block group') {
-    ctsf <- tigris::block_groups(
+    nbhds <- tigris::block_groups(
       state = state
       ,county = cofps
       ,year = year)
   }
 
-  ctsf <- ctsf %>%
+  nbhds <- nbhds %>%
+    tibble() %>%
     rename_with(tolower) %>%
-    select(geoid, aland, geometry)
+    select(geoid, aland)#, geometry)
 
   # censusrx pulls
 
-  # only get totals and medians; others aren't useful as 1-row/tract
+  # only totals and medians
   ctts <- censusrx::gett.census.totals(
     states = state
     ,cofps = cofps
@@ -53,7 +56,7 @@ get.tract.attrs <- function( state,
     ,geo = geo
   )
 
-  # skip this; they're useful for separate analysis.
+  # skip these; they're useful for separate analysis (these tables aren't 1-row/tract.
   #acl <- censusrx::tidycensus2recoded.tblList(
   #  states = state
   #  ,years = year
@@ -61,7 +64,7 @@ get.tract.attrs <- function( state,
   #)
 
   acm <- censusrx::pull.tidycensus.median.tables(
-    states = state
+     states = state
     ,cofps = cofps
     ,years = year
     ,geo = geo
@@ -75,21 +78,6 @@ get.tract.attrs <- function( state,
                   ,geoid, year, !!.y := n)
     )
 
-  attrs <-
-    purrr::reduce(
-      c(list( ctts
-             ,tibble(ctsf)[c('geoid', 'aland')])
-        , acm)
-      ,full_join
-    )
-
-  # filter to counties (pulls used to be statewide, should be extraneous)
-  attrs <- attrs %>%
-    filter(substr(geoid, 3, 5) %in%
-             cofps)
-
-  # other pulls
-
   ## car ownership -----------------------------------------------------------
 
   # B08201_001	Total (universe: households)
@@ -98,10 +86,10 @@ get.tract.attrs <- function( state,
   # B08201_004	Total: 2 vehicles available
   # B08201_005	Total: 3 vehicles available
   # B08201_006	Total: 4 or more vehicles available
-
   cown <- tidycensus::get_acs(
     geography = geo
-    ,variables = paste0('B08201_00', 1:6)
+    ,variables = paste0('B08201_00', 1:2# 1:6
+                        )
     ,year = year
     ,survey = 'acs5'
     ,state = state
@@ -110,21 +98,17 @@ get.tract.attrs <- function( state,
     select(-NAME) %>%
     rename_with(tolower)
 
+  # pivot wide, get perc, and drop n.hh, which will be duplicative with n.hh
+  # from ctts.
   cownt <- cown %>%
     select(-moe) %>%
-    filter(grepl('1$|2$', variable)) %>%
+    #filter(grepl('1$|2$', variable)) %>%
     pivot_wider(names_from = variable,
                 values_from = estimate) %>%
     mutate(perc.no.car =
-             B08201_002 / B08201_001)
-
-  # B08201_001, n.hh will be duplicative with n.hh from ctts.
-  cownt <- cownt %>%
-    rename(n.hh = B08201_001, nhh.zerocar = B08201_002 ) %>%
-    select(-n.hh)
-
-  attrs <- attrs %>%
-    left_join(cownt)
+             B08201_002 / B08201_001) %>%
+    select(-B08201_001) %>%
+    rename(nhh.zerocar = B08201_002)
 
   ## language ----------------------------------------------------------------
 
@@ -136,15 +120,36 @@ get.tract.attrs <- function( state,
   # well" B08513_008	Total: Speak other languages: Speak English less than "very
   # well"
 
-  # skip this one both because the table is weird and it's not generally so
-  # applicable.? Code in in indev folder if i wanna put back in
-
+  # skip this one for now because the recode is annoying? Code in in indev
+  # folder if i wanna put back in
 
   ## LF and emply ------------------------------------------------------------
 
+  lbls <- tibble(
+    variable = Hmisc::Cs(
+      B23025_001
+      ,B23025_002
+      #,B23025_003
+      #,B23025_004
+      ,B23025_005
+      #,B23025_006
+      #,B23025_007
+    )
+    ,lbl = c(
+      'pop.over.16'
+      ,'inLF'
+      #,'in.civLF'
+      #,'employed'
+      ,'n.unemployed'
+      #,'armed.forces'
+      #,'not.inLF'
+    )
+  )
+
   lf <- tidycensus::get_acs(
     geography = geo
-    ,table = 'B23025'
+    #,table = 'B23025'
+    ,variables = set_names(lbls$variable, lbls$lbl)
     ,year = year
     ,survey = 'acs5'
     ,state = state
@@ -153,72 +158,57 @@ get.tract.attrs <- function( state,
     select(-NAME) %>%
     rename_with(tolower)
 
-  lbls <- tibble(
-    variable = Hmisc::Cs(
-      B23025_001
-      ,B23025_002
-      ,B23025_003
-      ,B23025_004
-      ,B23025_005
-      ,B23025_006
-      ,B23025_007)
-    ,lbl = c(
-      'pop.over.16'
-      ,'inLF'
-      ,'in.civLF'
-      ,'employed'
-      ,'unemployed'
-      ,'armed.forces'
-      ,'not.inLF'
-    )
-  )
-
   lf <- lf %>%
-    left_join(lbls) %>%
-    select(geoid, lbl, estimate) %>%
+    select( -moe ) %>%
     pivot_wider(values_from = estimate
-                ,names_from = lbl)
-
-  # lf$geoid %>% duplicated() %>% sum()
-
-  lf <- lf %>%
+                ,names_from = variable) %>%
     mutate( lfpr =
               inLF / pop.over.16
-
             ,unemply.rate =
-              unemployed /  inLF
+              n.unemployed /  inLF
     ) %>%
-    select(geoid, inLF, lfpr, n.unemployed = unemployed, unemply.rate)
-
-  attrs <- attrs %>%
-    left_join(lf)
+    select( -pop.over.16 )
 
   ## tenure ------------------------------------------------------------------
 
   # B25003; universe is Occupied Housing Units
   tenure <- tidycensus::get_acs(
     geography = geo
-    ,table = 'B25003'
+    #,table = 'B25003'
+    ,variables = c( 'occ.hunits' = 'B25003_001'
+                   ,'rental.occ.hu' = 'B25003_003'
+                    )
     ,year = year
     ,survey = 'acs5'
     ,state = state
     ,county = cofps
-    ,output = 'wide'
+    #,output = 'wide'
   ) %>%
     select(-NAME) %>%
     rename_with(tolower)
 
   tenure <- tenure %>%
-    select(-matches('m$')) %>%
-    select( geoid
-            ,occ.hunits = b25003_001e
-            ,rental.occ.hu = b25003_003e) %>%
-    mutate(rental.rate = rental.occ.hu / occ.hunits)
-
-  attrs <- attrs %>%
-    left_join(tenure)
+    select( -moe ) %>%
+    pivot_wider(names_from = variable,
+                values_from = estimate) %>%
+    mutate(rental.rate =
+             rental.occ.hu / occ.hunits)
 
   # final transforms ------------------------------------------------------------------
+
+  ## reduce ------------------------------------------------------------------
+
+  attrs <-
+    purrr::reduce(
+      c(
+        list(ctts, tibble(nbhds)[c('geoid', 'aland')])
+        , acm
+        ,list(cownt)
+        ,list(lf)
+        ,list(tenure)
+        )
+      ,full_join
+    )
 
   ## reorder -----------------------------------------------------------------
 
@@ -238,7 +228,6 @@ get.tract.attrs <- function( state,
   sum(! colnames(attrs) %in% colnames(attrss))
 
   ## put into acres and add densities ----------------------------------------
-
   attrss <- attrss %>%
     mutate(aland.acre =
              units::set_units(
@@ -249,9 +238,9 @@ get.tract.attrs <- function( state,
                   ,list(dens = ~.x / aland.acre)
     ))
 
-  ## return
   attrs <- attrss %>%
     select(-aland)
 
+  ## return
   return(attrs)
 }
