@@ -4,7 +4,13 @@
 \alias{get.tract.attrs}
 \title{get.tract.attrs}
 \usage{
-get.tract.attrs(state, cofps, year, geo = "tract")
+get.tract.attrs(
+  state,
+  cofps,
+  year,
+  geo = "tract",
+  get.demographics.and.commute = F
+)
 }
 \arguments{
 \item{state}{state fp code}
@@ -13,7 +19,14 @@ get.tract.attrs(state, cofps, year, geo = "tract")
 
 \item{year}{year.}
 
-\item{geo}{'tract' (default) or "block group"}
+\item{geo}{"tract" (default) or "block group"}
+
+\item{get.demographics.and.commute}{Whether to add some demographic and
+commute information. These may be pulled separately with
+\code{censusrx::tidycensus2recoded.tblList} -- b/c they don't have an obvious 1
+row/tract, this would allow more specific analysis. When they are pulled
+here they are pulled in wide, where the "transit" columns will refer to
+combined active+public transit.}
 }
 \description{
 One massive function to pull a lot of frequently-used data points at the

@@ -12,20 +12,32 @@
 #' @param state state fp code
 #' @param cofps county fp codes (3-character)
 #' @param year year.
-#' @param geo 'tract' (default) or "block group"
+#' @param geo "tract" (default) or "block group"
+#' @param get.demographics.and.commute Whether to add some demographic and
+#'   commute information. These may be pulled separately with
+#'   `censusrx::tidycensus2recoded.tblList` -- b/c they don't have an obvious 1
+#'   row/tract, this would allow more specific analysis. When they are pulled
+#'   here they are pulled in wide, where the "transit" columns will refer to
+#'   combined active+public transit.
 #'
 #' @export get.tract.attrs
 get.tract.attrs <- function( state,
                              cofps,
                              year,
-                             geo = 'tract') {
+                             geo = 'tract'
+                             #,geo.fcn = NULL
+                             ,get.demographics.and.commute = F
+                             ) {
 
   require(tidyverse)
   require(sf)
 
-  # browser()
+  #browser()
 
   options(tigris_use_cache = TRUE)
+
+  # get metadata (slight efficiency)
+
 
   # geos -------------------------------------------------------------------------
 
@@ -56,27 +68,62 @@ get.tract.attrs <- function( state,
     ,geo = geo
   )
 
-  # skip these; they're useful for separate analysis (these tables aren't 1-row/tract.
-  #acl <- censusrx::tidycensus2recoded.tblList(
-  #  states = state
-  #  ,years = year
-  #  ,geo = 'tract'
-  #)
 
   acm <- censusrx::pull.tidycensus.median.tables(
-     states = state
+    states = state
     ,cofps = cofps
     ,years = year
     ,geo = geo
   )
 
   ## reduce totals and medians
-
   # drop MOE and extra colms, rename estimate column with name:
   acm <- acm %>%
     imap( ~select(.x
                   ,geoid, year, !!.y := n)
     )
+
+
+  # get demos and commuting -------------------------------------------------
+
+  if(get.demographics.and.commute) {
+    # these tables aren't 1-row/tract, but useful for pulling % car commuters, %
+    # bl, etc.
+    acl <- censusrx::tidycensus2recoded.tblList(
+      states = state
+      ,cofps = cofps
+      ,years = year
+      ,geo = geo
+    )
+
+    # B03002 (demographics; universe is Total Pop); B08006 (Commute mode; universe
+    # is Workers 16 Years and Over)
+    acl <- acl[c("B03002", "B08006")]
+    acl$B03002 <-
+      acl$B03002 %>%
+      mutate(recode =
+               str_extract(tolower(recode)
+                           ,"black|latino|asian|other")
+      ) %>%
+      filter(!is.na(recode)) %>% # drop white only (remainder after subtracting others from pop)
+      mutate(recode = if_else(recode == "other", "other.nonwhite", recode)
+      ) %>%
+      pivot_wider(
+        names_from = recode
+        ,values_from = c(n, perc)
+      )
+
+    acl$B08006 <-
+      acl$B08006 %>%
+      filter(grepl("transit", recode)) %>%
+      group_by(year, geoid) %>%
+      summarise( across(c(n, perc),
+                        list(transit = sum))
+                 ) %>%
+      ungroup()
+  }
+
+
 
   ## car ownership -----------------------------------------------------------
 
@@ -210,6 +257,11 @@ get.tract.attrs <- function( state,
       ,full_join
     )
 
+  if(get.demographics.and.commute)
+    attrs <- attrs %>%
+    full_join(acl$B03002) %>%
+    full_join(acl$B08006)
+
   ## reorder -----------------------------------------------------------------
 
   colnames(attrs)
@@ -222,7 +274,10 @@ get.tract.attrs <- function( state,
            med.hhinc, med.crent, med.hcosts, med.hvalue,
            inLF, lfpr, n.unemployed, unemply.rate,
            nhh.zerocar, perc.no.car,
-           rental.occ.hu, rental.rate
+           rental.occ.hu, rental.rate,
+           any_of(c("n_transit", "perc_transit",
+                    "n_other.nonwhite", "n_asian", "n_latino", "n_black", "perc_other.nonwhite")
+                  )
     )
 
   sum(! colnames(attrs) %in% colnames(attrss))

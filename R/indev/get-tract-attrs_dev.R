@@ -3,6 +3,8 @@
 #' One massive function to pull a lot of frequently-used data points at the
 #' tract level for a given year and set of counties. Will return a one-row-by tract dataframe.
 
+# use browser call w/in function to hash out expanding fcn...
+
 library(tidyverse)
 library(sf)
 library(mapview)
@@ -12,16 +14,29 @@ options(tigris_use_cache = TRUE)
 
 devtools::load_all()
 
-
 # params ------------------------------------------------------------------
 
-
 state <- 37
-cofps <- c('053', '055')
+cofps <- c('053'
+           ,'055'
+           )
 yr <- 2021
 
 # pull metadata
 metadata <- pull.acs.metadata(year = yr)
+
+
+get.tract.attrs(state, cofps, yr, geo = "tract")
+
+tmp.w.bonus <-
+  get.tract.attrs(state, cofps, yr, geo = "tract"
+                  ,get.demographics.and.commute = T)
+
+tmp.w.bonus %>%
+  geox::attach.geos(year = yr) %>%
+  mapview::mapview(zcol = "perc_transit")
+  #mapview::mapview(zcol = "med.hcosts")
+
 
 
 # geos -------------------------------------------------------------------------
@@ -49,12 +64,16 @@ ctts <- censusrx::gett.census.totals(
 
 ctts
 
-# skip this; they're useful for separate analysis.
-#acl <- censusrx::tidycensus2recoded.tblList(
-#  states = state
-#  ,years = yr
-#  ,geo = 'tract'
-#)
+# these tables aren't 1-row/tract, but useful for pulling % car commuters, %
+# bl, etc.
+acl <- censusrx::tidycensus2recoded.tblList(
+  states = state
+  ,cofps = cofps
+  ,years = yr
+  ,geo = 'tract'
+)
+
+acl
 
 acm <- censusrx::pull.tidycensus.median.tables(
   states = state
@@ -63,31 +82,12 @@ acm <- censusrx::pull.tidycensus.median.tables(
   ,geo = 'tract'
 )
 
-#names(acl)
+# drop MOE and extra colms, rename estimate column with name:
 names(acm)
-
-## reduce totals and medians -----------------------------------------------
-
-# drop MOE and extra colms, useful names:
 acm <- acm %>%
-  map2( c('medhhinc', 'medcrent', 'medhomevalue')
-        ,~select(.x
-                 ,geoid, yr, !!.y := n)
-        )
-
-attrs <-
-  purrr::reduce(
-     c(list(ctts, tibble(ctsf)[c('geoid', 'aland')])
-       , acm)
-    ,full_join
+  imap( ~select(.x
+                ,geoid, year, !!.y := n)
   )
-
-# filter to counties (b/c those pulls are statewide)
-attrs <- attrs %>%
-  filter(substr(geoid, 3, 5) %in%
-           cofps)
-
-attrs
 
 # other pulls -------------------------------------------------------------
 
