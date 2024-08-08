@@ -19,7 +19,7 @@ get.tract.attrs(
 
 \item{year}{year.}
 
-\item{geo}{"tract" (default) or "block group"}
+\item{geo}{"tract" (default) or "block group" or "county"}
 
 \item{get.demographics.and.commute}{Whether to add some demographic and
 commute information. These may be pulled separately with

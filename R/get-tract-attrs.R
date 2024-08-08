@@ -12,7 +12,7 @@
 #' @param state state fp code
 #' @param cofps county fp codes (3-character)
 #' @param year year.
-#' @param geo "tract" (default) or "block group"
+#' @param geo "tract" (default) or "block group" or "county"
 #' @param get.demographics.and.commute Whether to add some demographic and
 #'   commute information. These may be pulled separately with
 #'   `censusrx::tidycensus2recoded.tblList` -- b/c they don't have an obvious 1
@@ -50,6 +50,10 @@ get.tract.attrs <- function( state,
     nbhds <- tigris::block_groups(
       state = state
       ,county = cofps
+      ,year = year)
+  } else if(geo == 'county') {
+    nbhds <- tigris::counties(
+      state = state
       ,year = year)
   }
 
