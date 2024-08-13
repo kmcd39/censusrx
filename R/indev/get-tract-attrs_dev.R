@@ -27,7 +27,9 @@ metadata <- pull.acs.metadata(year = yr)
 
 # can i make tract.attrs.more flexible ------------------------------------
 
-# i.e., adding counties
+# i.e., adding counties. Yes. seems great. Could prolly dev further by making a
+# xwalk btween tigris and tidycensus geo params. But a little more work, and
+# those can change over time.
 
 get.tract.attrs_dev <- function(
     state,

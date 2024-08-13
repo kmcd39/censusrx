@@ -27,10 +27,7 @@ ctsf <- tigris::tracts(
   rename_with(tolower) %>%
   select(geoid, aland, geometry)
 
-
-
 # check tots --------------------------------------------------------------
-
 
 ctts <- censusrx::gett.census.totals(
   states = 37
@@ -40,7 +37,6 @@ ctts <- censusrx::gett.census.totals(
 )
 
 ctts
-
 
 check <- tidycensus::get_acs(
   geography = 'county'
@@ -61,7 +57,7 @@ testthat::expect_equal(
 
 # censusrx tblList pull ----------------------------------------------------------
 
-devtools::load_all()
+#devtools::load_all()
 
 acl <- censusrx::tidycensus2recoded.tblList(
   states = 37
@@ -73,7 +69,6 @@ acl <- censusrx::tidycensus2recoded.tblList(
 names(acl)
 
 acs.demographic.recode
-
 
 ## demographics check ------------------------------------------------------
 
@@ -97,7 +92,6 @@ check <- acl$B25034 %>%
 testthat::expect_equal(
   check$n, check$n.hunits
 )
-
 
 ## median value checks -----------------------------------------------------
 
@@ -133,7 +127,7 @@ testthat::expect_equal(
 )
 
 # check median monthly housing costs
-acm$B25105
+acm$med.hcosts
 
 check <- tidycensus::get_acs(
   table = 'B25105'
@@ -179,6 +173,8 @@ check <- tidycensus::get_acs(
 
 
 # there shouldn't be any NAs in recodes or values
+#devtools::install_github("kmcd39/taux")
+
 testthat::expect_equal(
   {acl$B08006 %>%
     select(recode, n) %>%
@@ -202,12 +198,11 @@ testthat::expect_equal(
 )
 
 
-
 # test with cbsas ---------------------------------------------------------
 
-devtools::load_all()
+# devtools::load_all()
 
-cbsapops <- censusrx::gett.census.totals(
+cbsapops <- gett.census.totals(
   years = 2021
   ,geo = 'cbsa'
   ,states = NULL

@@ -1,13 +1,12 @@
 library(tidyverse)
 rm(list = ls())
+
 devtools::document()
 devtools::load_all()
-
 
 # meta --------------------------------------------------------------------
 
 meta <- pull.acs.metadata(year = 2019)
-
 
 # vacancies --------------------------------------------------------------------
 
@@ -19,16 +18,13 @@ vacancyts <- multiyr.acs.wrapper('B25034'
                                ,metadata = meta
                                )
 
-vacancyts %>%
-  count(label, yr)
-
+vacancyts %>%  count(label, year)
 
 ## specified counties ------------------------------------------------------
 
-
 # demos -------------------------------------------------------------------
 
-devtools::load_all()
+# devtools::load_all()
 
 demots <- multiyr.acs.wrapper('B03002'
                               ,state = 44
@@ -91,12 +87,14 @@ commutes <- multiyr.acs.wrapper('B08006'
                               , geo = 'county'
                               ,metadata = meta)
 
-devtools::load_all()
+#devtools::load_all()
+
 tmp <- acs.commute.recode(commutes)
 
 tmp <- tmp %>%
   group_by(year, recode) %>%
-  summarise(n = sum(estimate))
+  summarise(n = sum(estimate)) %>%
+  ungroup()
 
 tmp %>%
   ggplot( aes(  x = year
@@ -111,15 +109,12 @@ tmp %>%
   guides(fill = guide_legend(reverse=TRUE))
 
 
-if(!is.null(time.col))
-  p <- p +
-  facet_wrap(vars(!!.tc))
-
-
+# if(!is.null(time.col))
+#   p <- p +
+#   facet_wrap(vars(!!.tc))
 
 # test rent price levels --------------------------------------------------
 
 get.all.rentals.by.price.lvl(37, 2021,'county')
-
 
 

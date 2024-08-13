@@ -6,10 +6,11 @@
 \usage{
 get.tract.attrs(
   state,
-  cofps,
+  cofps = NULL,
   year,
   geo = "tract",
-  get.demographics.and.commute = F
+  get.demographics.and.commute = F,
+  keep.geos = F
 )
 }
 \arguments{
@@ -19,19 +20,24 @@ get.tract.attrs(
 
 \item{year}{year.}
 
-\item{geo}{"tract" (default) or "block group" or "county"}
+\item{geo}{"tract" (default) or "block group" or "county", or other geo in
+\code{censusrx::tigris.acs.geo.equivalents}}
 
 \item{get.demographics.and.commute}{Whether to add some demographic and
 commute information. These may be pulled separately with
 \code{censusrx::tidycensus2recoded.tblList} -- b/c they don't have an obvious 1
 row/tract, this would allow more specific analysis. When they are pulled
 here they are pulled in wide, where the "transit" columns will refer to
-combined active+public transit.}
+combined commuters by active+public transit.}
+
+\item{keep.geos}{Whether or not to keep geometries retrieved from \code{tigris}
+function. They will be pulled initially regardless to get ALAND and
+calculate densities.}
 }
 \description{
-One massive function to pull a lot of frequently-used data points at the
-tract or block group level for a given year and set of counties. Will return
-a one-row-by tract (or BG) dataframe.
+One massive function to pull a lot of frequently-used data points at most
+common census geographies for a given year and set of counties. Will return a
+one-row-by-areal-unit dataframe.
 }
 \details{
 TODO: could be add an argument for keeping MOEs

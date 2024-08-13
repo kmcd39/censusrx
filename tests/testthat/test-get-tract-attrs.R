@@ -147,4 +147,74 @@ test_that("nbhd.attrs.BGs unemployment rate check",
           })
 
 
+
+
+# check for places --------------------------------------------------------
+
+# devtools::load_all()
+
+plc.attrs <-
+  get.tract.attrs(
+    state = "25"
+    #,cofps = NULL
+    ,year = 2021
+    ,geo = "place"
+    ,get.demographics.and.commute = T
+    ,keep.geos = T
+  )
+
+# plc.attrs %>%
+#   st_sf() %>%
+#   mapview(zcol = "perc_transit")
+
+
+plc.attrs %>%
+  select(geoid, perc_black)
+
+plc.attrs %>% glimpse()
+plc.attrs %>% colnames()
+
+plc.attrs
+
+plc.bl.check <-
+  tidycensus::get_acs(
+    geography = "place"
+    ,variables = c(
+      "pop" = "B03002_001"
+      ,"bl.non.hisp" = "B03002_004"
+      ,"bl.hisp" = "B03002_014"
+      )
+    ,state = 25
+    ,year = 2021
+  )
+
+plc.bl.check <-
+  plc.bl.check %>%
+  rename_with(tolower) %>%
+  select(-name) %>%
+  select(-moe) %>%
+  pivot_wider(
+    names_from = "variable"
+    ,values_from = "estimate"
+  ) %>%
+  mutate(perc_bl.check =
+           bl.non.hisp / pop) %>%
+  arrange(geoid)
+
+plc.attrs <- plc.attrs %>%
+  arrange(geoid)
+
+plc.attrs
+plc.bl.check
+
+test_that("nbhd.attrs.Places percbl check",
+          {expect_equal(
+             plc.attrs$perc_black
+            ,plc.bl.check$perc_bl.check )
+          })
+
+# test for CBSAs ----------------------------------------------------------
+
+
+
 # scratch -----------------------------------------------------------------

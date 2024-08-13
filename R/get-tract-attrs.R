@@ -1,8 +1,8 @@
 #' get.tract.attrs
 #'
-#' One massive function to pull a lot of frequently-used data points at the
-#' tract or block group level for a given year and set of counties. Will return
-#' a one-row-by tract (or BG) dataframe.
+#' One massive function to pull a lot of frequently-used data points at most
+#' common census geographies for a given year and set of counties. Will return a
+#' one-row-by-areal-unit dataframe.
 #'
 #' TODO: could be add an argument for keeping MOEs
 #'
@@ -12,55 +12,79 @@
 #' @param state state fp code
 #' @param cofps county fp codes (3-character)
 #' @param year year.
-#' @param geo "tract" (default) or "block group" or "county"
+#' @param geo "tract" (default) or "block group" or "county", or other geo in
+#'   `censusrx::tigris.acs.geo.equivalents`
 #' @param get.demographics.and.commute Whether to add some demographic and
 #'   commute information. These may be pulled separately with
 #'   `censusrx::tidycensus2recoded.tblList` -- b/c they don't have an obvious 1
 #'   row/tract, this would allow more specific analysis. When they are pulled
 #'   here they are pulled in wide, where the "transit" columns will refer to
-#'   combined active+public transit.
+#'   combined commuters by active+public transit.
+#' @param keep.geos Whether or not to keep geometries retrieved from `tigris`
+#'   function. They will be pulled initially regardless to get ALAND and
+#'   calculate densities.
 #'
 #' @export get.tract.attrs
-get.tract.attrs <- function( state,
-                             cofps,
-                             year,
-                             geo = 'tract'
-                             #,geo.fcn = NULL
-                             ,get.demographics.and.commute = F
-                             ) {
+get.tract.attrs <- function(
+    state,
+    cofps = NULL,
+    year,
+    geo = 'tract'
+    #,geo.fcn = NULL
+    ,get.demographics.and.commute = F
+    ,keep.geos = F
+) {
 
   require(tidyverse)
   require(sf)
+  require(tigris)
 
   #browser()
 
   options(tigris_use_cache = TRUE)
 
   # get metadata (slight efficiency)
+  metadata <- censusrx::pull.acs.metadata(
+    year = year
+    ,dataset = "acs5"
+  )
 
 
-  # geos -------------------------------------------------------------------------
+  # get geo fcn -------------------------------------------------------------------------
+  geo.fcn <-
+    censusrx::tigris.acs.geo.equivalents[
+      censusrx::tigris.acs.geo.equivalents$api.geos == geo
+      , ]$tigris.fcns[[1]]
 
-  if(geo == 'tract') {
-    nbhds <- tigris::tracts(
+  if(geo %in%
+     c("block", "block group", "tract", "county subdivision")){
+
+    nbhds <- geo.fcn(
       state = state
       ,county = cofps
       ,year = year)
-  } else if(geo == 'block group') {
-    nbhds <- tigris::block_groups(
+  } else if(geo %in%
+            c("county", "place")) {
+    nbhds <- geo.fcn(
       state = state
-      ,county = cofps
       ,year = year)
-  } else if(geo == 'county') {
-    nbhds <- tigris::counties(
+  } else {
+    nbhds <- geo.fcn(
       state = state
       ,year = year)
   }
 
-  nbhds <- nbhds %>%
-    tibble() %>%
-    rename_with(tolower) %>%
-    select(geoid, aland)#, geometry)
+  if(keep.geos) {
+    nbhds <- nbhds %>%
+      tibble() %>%
+      rename_with(tolower) %>%
+      select(geoid, aland, geometry)
+  } else if(!keep.geos){
+    nbhds <- nbhds %>%
+      tibble() %>%
+      rename_with(tolower) %>%
+      select(geoid, aland) #, geometry)
+  }
 
   # censusrx pulls
 
@@ -98,6 +122,7 @@ get.tract.attrs <- function( state,
       ,cofps = cofps
       ,years = year
       ,geo = geo
+      ,metadata = metadata
     )
 
     # B03002 (demographics; universe is Total Pop); B08006 (Commute mode; universe
@@ -249,15 +274,15 @@ get.tract.attrs <- function( state,
 
   ## reduce ------------------------------------------------------------------
 
+  # browser()
   attrs <-
     purrr::reduce(
       c(
-        list(ctts, tibble(nbhds)[c('geoid', 'aland')])
-        , acm
-        ,list(cownt)
-        ,list(lf)
-        ,list(tenure)
-        )
+        list(ctts, nbhds
+             ,cownt, lf
+             ,tenure)
+        ,acm
+      )
       ,full_join
     )
 
@@ -268,7 +293,8 @@ get.tract.attrs <- function( state,
 
   ## reorder -----------------------------------------------------------------
 
-  colnames(attrs)
+
+  # colnames(attrs)
 
   attrss <- attrs %>%
     select(geoid, year,
@@ -280,11 +306,13 @@ get.tract.attrs <- function( state,
            nhh.zerocar, perc.no.car,
            rental.occ.hu, rental.rate,
            any_of(c("n_transit", "perc_transit",
-                    "n_other.nonwhite", "n_asian", "n_latino", "n_black", "perc_other.nonwhite")
+                    "perc_black", "perc_latino", "perc_asian", "perc_other.nonwhite",
+                    "geometry"
+                    )
                   )
     )
 
-  sum(! colnames(attrs) %in% colnames(attrss))
+  # sum(! colnames(attrs) %in% colnames(attrss))
 
   ## put into acres and add densities ----------------------------------------
   attrss <- attrss %>%
