@@ -8,10 +8,11 @@
 #' column called "variable" for table pulled with tidycensus.
 #'
 #' @export extract.acs.var
+#'
 extract.acs.var <- function(x) {
 
       as.numeric(
-        str_extract(x, '[0-9]{3}$')
+        stringr::str_extract(x, '[0-9]{3}$')
     )
 
 }
@@ -31,7 +32,8 @@ pull.acs.metadata <- function(year
                               ,dataset = 'acs5'
                               ,cache = T) {
 
-  require(tidyverse)
+  requireNamespace("dplyr")
+  requireNamespace("tidycensus")
 
   meta <- tidycensus::load_variables(year = year
                              ,dataset = dataset
@@ -39,9 +41,14 @@ pull.acs.metadata <- function(year
 
   # clean
   meta <- meta %>%
-    mutate(label = gsub('!!', ' ', label)) %>%
-    mutate(label = gsub('Estimate ', '', label)) %>%
-    mutate(label = gsub(':$', '', label))
+    mutate(label =
+             gsub('!!', ' ', label)
+           ) %>%
+    mutate(label =
+             gsub('Estimate ', '', label)
+           ) %>%
+    mutate(label =
+             gsub(':$', '', label))
 
   return(meta)
 }
@@ -86,19 +93,26 @@ pull.acs.metadata <- function(year
 #' @param filter.aggregates If true, filter totals and subtotals.
 #'
 #' @export acs.demographic.recode
-acs.demographic.recode <- function(demos
-                                   ,other.vars = c(5, 7:11)
-                                   ,filter.aggregates = T) {
+acs.demographic.recode <- function(
+    demos
+    ,other.vars = c(5, 7:11)
+    ,filter.aggregates = T) {
+
+  requireNamespace("dplyr")
+  requireNamespace("tidycensus")
 
   if(filter.aggregates)
     demos <- demos %>%
       filter( ! var %in% c(1, 2, 9, 13:21) )
 
   demos <- demos %>%
-    mutate( label = gsub('Total: Not Hispanic or Latino: ', '', label)) %>%
-    mutate( label = gsub('Total: ', '', label)) %>%
-
-    mutate(recode = case_when(
+    mutate( label =
+              gsub('Total: Not Hispanic or Latino: ', '', label)
+            ) %>%
+    mutate( label = gsub('Total: ', '', label)
+            ) %>%
+    mutate(recode =
+             case_when(
       var %in% other.vars ~ 'Other group'
       ,TRUE ~ label)
     )
@@ -168,8 +182,6 @@ acs.vacancy.recode <- function(vacancy
 }
 
 
-
-
 #' acs.bldg.age.recode
 #'
 #' Recodes demographic info, as from table B25034 Was developed for 2019 ACS;
@@ -196,27 +208,35 @@ acs.vacancy.recode <- function(vacancy
 #'
 #'
 #' @export acs.bldg.age.recode
+#'
 acs.bldg.age.recode <- function(bldgs
                                 ,filter.aggregates = T) {
+
+  requireNamespace("dplyr")
 
   if(filter.aggregates)
     bldgs <- bldgs %>%
       filter( ! var %in% c(1) )
 
   bldgs <- bldgs %>%
-    mutate( label = gsub('Total: ', '', label)) %>%
-    mutate(recode = case_when(
-      var %in% c(2:4) ~ 'Built since 2000'
-      ,var %in% c(5:7) ~ 'Built from 1970-1999'
-      ,var %in% c(8:11) ~ 'Built before 1970'
-      ,TRUE ~ label
-    ))
+    mutate( label =
+              gsub('Total: ', '', label)
+            ) %>%
+    mutate(recode =
+             case_when(
+               var %in% c(2:4) ~ 'Built since 2000'
+               ,var %in% c(5:7) ~ 'Built from 1970-1999'
+               ,var %in% c(8:11) ~ 'Built before 1970'
+               ,TRUE ~ label
+             ))
 
   # as factor
-  bldgs$recode <- factor(bldgs$recode
-                         ,levels = rev(c('Built before 1970'
-                                         ,'Built from 1970-1999'
-                                         ,'Built since 2000')))
+  bldgs$recode <-
+    factor(bldgs$recode
+           ,levels = rev(c('Built before 1970'
+                           ,'Built from 1970-1999'
+                           ,'Built since 2000'))
+           )
 
   return(bldgs)
 }
@@ -246,9 +266,11 @@ acs.bldg.age.recode <- function(bldgs
 #' @inheritParams acs.demographic.recode
 #'
 #' @export acs.rentburden.recode
-acs.rentburden.recode <- function(rentb
-                               ,filter.aggregates = T
-                               ) {
+#'
+acs.rentburden.recode <- function(
+    rentb
+    ,filter.aggregates = T
+) {
 
   if(filter.aggregates)
     rentb <- rentb %>%
@@ -285,11 +307,14 @@ acs.rentburden.recode <- function(rentb
 #' @inheritParams acs.demographic.recode
 #'
 #' @export acs.commute.recode
-acs.commute.recode <- function(x
-                               ,separate.carpools = F
-                               ,filter.aggregates = T
-                               #,others.vars = c(16)
+acs.commute.recode <- function(
+    x
+    ,separate.carpools = F
+    ,filter.aggregates = T
+    #,others.vars = c(16)
 ) {
+
+  requireNamespace("dplyr")
 
   commutes <- x %>%
     filter(var %in% 1:17)
@@ -345,6 +370,8 @@ acs.rentals.by.level.recode <- function(x
                                         ,acs.tbl = c('B25056', 'B25061')
                                         ,filter.aggregates = T) {
 
+  requireNamespace("dplyr")
+
   acs.tbl <- acs.tbl[1]
 
   if(filter.aggregates &
@@ -396,12 +423,15 @@ acs.rentals.by.level.recode <- function(x
 #' Recodes table B19001, Household Income, universe: all households.
 #'
 #' @export acs.households.by.income.recode
-acs.households.by.income.recode <- function(x
-                                            ,filter.aggregates = T) {
+acs.households.by.income.recode <- function(
+    x
+    ,filter.aggregates = T) {
 
+  requireNamespace("dplyr")
 
   if(filter.aggregates)
-    x <- x %>% filter(!var %in% 1)
+    x <- x %>%
+      filter(!var %in% 1)
 
   x <- x %>%
     mutate(recode =

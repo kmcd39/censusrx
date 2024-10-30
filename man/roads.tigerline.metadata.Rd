@@ -7,5 +7,9 @@
 roads.tigerline.metadata(rttyp = F)
 }
 \description{
-Export metadata for roads tigerline features
+Export metadata for roads tigerline features.
+}
+\details{
+Retruns a mapping for route type (\code{rttyp}) if \code{rttyp = T}; otherwise returns
+descriptions for \code{MTFCC}
 }

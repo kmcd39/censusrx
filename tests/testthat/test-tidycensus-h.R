@@ -1,4 +1,6 @@
-library(tidyverse)
+library(dplyr)
+library(tidyr)
+library(purrr)
 rm(list = ls())
 
 devtools::document()

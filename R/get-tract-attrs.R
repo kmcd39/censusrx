@@ -24,7 +24,12 @@
 #'   function. They will be pulled initially regardless to get ALAND and
 #'   calculate densities.
 #'
+#' @import tidycensus
+#' @import tigris
+#' @import dplyr
+#'
 #' @export get.tract.attrs
+#'
 get.tract.attrs <- function(
     state,
     cofps = NULL,
@@ -35,10 +40,15 @@ get.tract.attrs <- function(
     ,keep.geos = F
 ) {
 
-  require(tidyverse)
-  require(sf)
-  require(tigris)
+  requireNamespace("dplyr")
+  requireNamespace("tidyr")
+  requireNamespace("purrr")
+  requireNamespace("tidycensus")
+  requireNamespace("tigris")
+  requireNamespace("units")
 
+  if(keep.geos)
+    requireNamespace("sf")
   #browser()
 
   options(tigris_use_cache = TRUE)
@@ -75,38 +85,45 @@ get.tract.attrs <- function(
   }
 
   if(keep.geos) {
-    nbhds <- nbhds %>%
+    nbhds <-
+      nbhds %>%
       tibble() %>%
       rename_with(tolower) %>%
       select(geoid, aland, geometry)
+
   } else if(!keep.geos){
-    nbhds <- nbhds %>%
+    nbhds <-
+      nbhds %>%
       tibble() %>%
       rename_with(tolower) %>%
       select(geoid, aland) #, geometry)
+
   }
 
   # censusrx pulls
 
   # only totals and medians
-  ctts <- censusrx::gett.census.totals(
-    states = state
-    ,cofps = cofps
-    ,years = year
-    ,geo = geo
-  )
+  ctts <-
+    censusrx::gett.census.totals(
+      states = state
+      ,cofps = cofps
+      ,years = year
+      ,geo = geo
+    )
 
 
-  acm <- censusrx::pull.tidycensus.median.tables(
-    states = state
-    ,cofps = cofps
-    ,years = year
-    ,geo = geo
-  )
+  acm <-
+    censusrx::pull.tidycensus.median.tables(
+      states = state
+      ,cofps = cofps
+      ,years = year
+      ,geo = geo
+    )
 
   ## reduce totals and medians
   # drop MOE and extra colms, rename estimate column with name:
-  acm <- acm %>%
+  acm <-
+    acm %>%
     imap( ~select(.x
                   ,geoid, year, !!.y := n)
     )
@@ -117,41 +134,46 @@ get.tract.attrs <- function(
   if(get.demographics.and.commute) {
     # these tables aren't 1-row/tract, but useful for pulling % car commuters, %
     # bl, etc.
-    acl <- censusrx::tidycensus2recoded.tblList(
-      states = state
-      ,cofps = cofps
-      ,years = year
-      ,geo = geo
-      ,metadata = metadata
-    )
+    acl <-
+      censusrx::tidycensus2recoded.tblList(
+        states = state
+        ,cofps = cofps
+        ,years = year
+        ,geo = geo
+        ,metadata = metadata
+      )
 
     # B03002 (demographics; universe is Total Pop); B08006 (Commute mode; universe
     # is Workers 16 Years and Over)
     acl <- acl[c("B03002", "B08006")]
+
     acl$B03002 <-
       acl$B03002 %>%
       mutate(recode =
-               str_extract(tolower(recode)
-                           ,"black|latino|asian|other")
+               stringr::str_extract(tolower(recode)
+                                    ,"black|latino|asian|other")
       ) %>%
-      filter(!is.na(recode)) %>% # drop white only (remainder after subtracting others from pop)
-      mutate(recode = if_else(recode == "other", "other.nonwhite", recode)
-      ) %>%
-      pivot_wider(
+      filter(!is.na(recode)
+             ) %>% # drop white only (remainder after subtracting others from pop)
+      mutate(recode =
+               if_else(recode == "other", "other.nonwhite", recode)
+             ) %>%
+      tidyr::pivot_wider(
         names_from = recode
         ,values_from = c(n, perc)
       )
 
     acl$B08006 <-
       acl$B08006 %>%
-      filter(grepl("transit", recode)) %>%
-      group_by(year, geoid) %>%
+      filter(grepl("transit", recode)
+             ) %>%
+      group_by(year, geoid
+               ) %>%
       summarise( across(c(n, perc),
                         list(transit = sum))
                  ) %>%
       ungroup()
   }
-
 
 
   ## car ownership -----------------------------------------------------------
@@ -163,7 +185,7 @@ get.tract.attrs <- function(
   # B08201_005	Total: 3 vehicles available
   # B08201_006	Total: 4 or more vehicles available
   cown <- tidycensus::get_acs(
-    geography = geo
+     geography = geo
     ,variables = paste0('B08201_00', 1:2# 1:6
                         )
     ,year = year
@@ -202,12 +224,12 @@ get.tract.attrs <- function(
   ## LF and emply ------------------------------------------------------------
 
   lbls <- tibble(
-    variable = Hmisc::Cs(
-      B23025_001
-      ,B23025_002
+    variable = c(
+       "B23025_001"
+      ,"B23025_002"
       #,B23025_003
       #,B23025_004
-      ,B23025_005
+      ,"B23025_005"
       #,B23025_006
       #,B23025_007
     )
@@ -225,7 +247,8 @@ get.tract.attrs <- function(
   lf <- tidycensus::get_acs(
     geography = geo
     #,table = 'B23025'
-    ,variables = set_names(lbls$variable, lbls$lbl)
+    ,variables =
+      set_names(lbls$variable, lbls$lbl)
     ,year = year
     ,survey = 'acs5'
     ,state = state
@@ -236,24 +259,29 @@ get.tract.attrs <- function(
 
   lf <- lf %>%
     select( -moe ) %>%
-    pivot_wider(values_from = estimate
-                ,names_from = variable) %>%
-    mutate( lfpr =
-              inLF / pop.over.16
-            ,unemply.rate =
-              n.unemployed /  inLF
+    tidyr::pivot_wider(
+      values_from = estimate
+      ,names_from = variable
+      ) %>%
+    mutate(
+      lfpr =
+        inLF / pop.over.16
+      ,unemply.rate =
+        n.unemployed /  inLF
     ) %>%
     select( -pop.over.16 )
 
   ## tenure ------------------------------------------------------------------
 
   # B25003; universe is Occupied Housing Units
-  tenure <- tidycensus::get_acs(
+  tenure <-
+    tidycensus::get_acs(
     geography = geo
     #,table = 'B25003'
-    ,variables = c( 'occ.hunits' = 'B25003_001'
-                   ,'rental.occ.hu' = 'B25003_003'
-                    )
+    ,variables = c(
+       'occ.hunits' = 'B25003_001'
+      ,'rental.occ.hu' = 'B25003_003'
+    )
     ,year = year
     ,survey = 'acs5'
     ,state = state
@@ -263,10 +291,13 @@ get.tract.attrs <- function(
     select(-NAME) %>%
     rename_with(tolower)
 
-  tenure <- tenure %>%
+  tenure <-
+    tenure %>%
     select( -moe ) %>%
-    pivot_wider(names_from = variable,
-                values_from = estimate) %>%
+    tidyr::pivot_wider(
+      names_from = variable,
+      values_from = estimate
+    ) %>%
     mutate(rental.rate =
              rental.occ.hu / occ.hunits)
 
