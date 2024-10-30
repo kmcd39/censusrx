@@ -26,6 +26,9 @@ commute.times.by.mode <- function( geo = 'county'
                                    ,cofps = NULL
                                    ,year = 2019) {
 
+  requireNamespace("dplyr")
+  requireNamespace("tidycensus")
+  requireNamespace("geox")
 
   #browser()
   # acs table B08136 - AGGREGATE TRAVEL TIME TO WORK (IN MINUTES) OF WORKERS BY
@@ -42,8 +45,10 @@ commute.times.by.mode <- function( geo = 'county'
     select(-name)
 
   cmt <- cmts %>%
-    mutate(var = censusrx::extract.acs.var(variable)) %>%
-    mutate(geoid = geox::fix.geoid(geoid))
+    mutate(var =
+             censusrx::extract.acs.var(variable)) %>%
+    mutate(geoid =
+             geox::fix.geoid(geoid))
 
   # TABLE ENCODING:
   #
@@ -115,8 +120,10 @@ commute.times.by.mode <- function( geo = 'county'
     select(-name)
 
   cmode <- cmodes %>%
-    mutate(var = censusrx::extract.acs.var(variable)) %>%
-    mutate(geoid = geox::fix.geoid(geoid))
+    mutate(var =
+             censusrx::extract.acs.var(variable)) %>%
+    mutate(geoid =
+             geox::fix.geoid(geoid))
 
   # add total, using total var in acs (not summing by area)
   cmode <- cmode %>%

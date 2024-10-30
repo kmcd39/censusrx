@@ -14,6 +14,8 @@ get.cagr.comparison <- function(
     x
     ) {
 
+  requireNamespace("dplyr")
+
   x %>%
     arrange(geoid, variable, year) %>%
     group_by(geoid, variable) %>%

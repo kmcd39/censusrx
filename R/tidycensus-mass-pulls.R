@@ -21,8 +21,13 @@
 #' @param metadata To use for labels. Result of `pull.acs.metadata` or
 #'   `tidycensus::load_variables`
 #'
+#' @importFrom utils tail
+#' @import purrr
+#' @import dplyr
+#'
 #' @export multiyr.acs.wrapper
-multiyr.acs.wrapper <- function( tables
+#'
+multiyr.acs.wrapper <- function(  tables
                                  , states
                                  , geo
                                  , years
@@ -31,27 +36,31 @@ multiyr.acs.wrapper <- function( tables
                                  ,cache = T
                                  ,survey = 'acs5') {
 
+  requireNamespace("dplyr")
+  requireNamespace("purrr")
+
   if( is.null(metadata))
-    metadata <- pull.acs.metadata(year = tail(years, 1))
+    metadata <- pull.acs.metadata(year = utils::tail(years, 1))
 
   #browser()
   params <- expand.grid(tables, years)
 
-  x <- map2_dfr( params[[1]], params[[2]]
-                 , ~{tidycensus::get_acs(
-                   geography = geo
-                   ,table = .x
-                   ,year = .y
-                   ,county = cofps
-                   ,state = states
-                   ,survey = survey
-                   ,cache_table = cache
-                 ) %>%
-                     mutate(tabl = .x
-                            ,year = .y
-                     ) %>%
-                     rename_with( tolower )
-                 })
+  x <- purrr::map2_dfr(
+    params[[1]], params[[2]]
+    , ~{tidycensus::get_acs(
+      geography = geo
+      ,table = .x
+      ,year = .y
+      ,county = cofps
+      ,state = states
+      ,survey = survey
+      ,cache_table = cache
+    ) %>%
+        mutate(tabl = .x
+               ,year = .y
+        ) %>%
+        rename_with( tolower )
+    })
 
   x <- x %>% select(-name)
 
@@ -89,6 +98,7 @@ multiyr.acs.wrapper <- function( tables
 #' @inheritParams multiyr.acs.wrapper
 #'
 #' @export tidycensus2recoded.tblList
+#'
 tidycensus2recoded.tblList <- function(
     states = NULL
     , years
@@ -104,24 +114,22 @@ tidycensus2recoded.tblList <- function(
     ,survey = 'acs5'
 ) {
 
-  #browser()
-
-  require(tidyverse)
-  require(tidycensus)
+  requireNamespace("dplyr")
+  requireNamespace("purrr")
 
   if( is.null(metadata))
     metadata <- pull.acs.metadata(year = tail(years, 1))
 
-  x <- map(tbls,
-           ~multiyr.acs.wrapper(
-             tables = .x
-             ,geo = geo
-             ,years = years
-             ,states = states
-             ,cofps = cofps
-             ,metadata = metadata
-             ,survey = survey
-           ) ) %>%
+  x <- purrr::map(tbls,
+                  ~multiyr.acs.wrapper(
+                    tables = .x
+                    ,geo = geo
+                    ,years = years
+                    ,states = states
+                    ,cofps = cofps
+                    ,metadata = metadata
+                    ,survey = survey
+                  ) ) %>%
     setNames(tbls)
 
   fcns <- c(acs.demographic.recode,
@@ -132,12 +140,12 @@ tidycensus2recoded.tblList <- function(
   )
 
   # call appropriate recode fcn for each table
-  rx <- map2(x, fcns
+  rx <- purrr::map2(x, fcns
              , ~.y(.x)
   )
 
   # sum to recode, and add %s
-  rx <- map(rx,
+  rx <- purrr::map(rx,
             ~{.x %>%
                 group_by(year, geoid, recode) %>%
                 summarise(n = sum(estimate)) %>%
@@ -179,9 +187,11 @@ pull.tidycensus.median.tables <- function(
     ,cofps = NULL
     ,survey = 'acs5'
 ) {
-  require(tidyverse)
 
-  mx <- imap(tbls,
+  requireNamespace("dplyr")
+  requireNamespace("purrr")
+
+  mx <- purrr::imap(tbls,
             ~multiyr.acs.wrapper(
               tables = .x
               ,geo = geo
@@ -192,7 +202,7 @@ pull.tidycensus.median.tables <- function(
             ) )
 
   # rename estimate to N to match other tbls
-  mx <- map(mx, ~rename(.x, n = estimate))
+  mx <- purrr::map(mx, ~rename(.x, n = estimate))
 
   return(mx)
 }
@@ -209,6 +219,7 @@ pull.tidycensus.median.tables <- function(
 #' @inheritParams tidycensus2recoded.tblList
 #'
 #' @export gett.census.totals
+#'
 gett.census.totals <- function(
      states = NULL
     ,years
@@ -216,43 +227,46 @@ gett.census.totals <- function(
     ,cofps = NULL
     ,survey = 'acs5') {
 
-  require(tidyverse)
+  requireNamespace("dplyr")
+  requireNamespace("purrr")
+  requireNamespace("tidycensus")
 
   #browser()
 
-  # use below to manage case wehre STATES = NULL
+  # use below to manage case where STATES = NULL
   if(length(states) > 0)
     params <- expand.grid(states, years)
   else
     params <- tibble(Var1 = list(NULL), Var2 = years)
 
-  tots <- map2_dfr( params[[1]], params[[2]]
-                    ,~{ tidycensus::get_acs(
-                      geography = geo
-                      ,variables =
-                        c( pop = 'B01001_001'
-                           ,n.hh = 'B08201_001' #n.households
-                           ,n.hunits = 'B25034_001' # n housing units
-                        )
-                      ,state = .x
-                      #,county = substr(., 3,5)
-                      ,year = .y
-                      ,survey = survey
-                      ,county = cofps
-                      ,geometry = F
-                      ,cache_table = T
-                    ) %>%
-                        mutate(year = .y
-                        ) %>%
-                        rename_with( tolower )
-                    }) %>%
+  tots <- purrr::map2_dfr(
+    params[[1]], params[[2]]
+    ,~{ tidycensus::get_acs(
+      geography = geo
+      ,variables =
+        c( pop = 'B01001_001'
+           ,n.hh = 'B08201_001' #n.households
+           ,n.hunits = 'B25034_001' # n housing units
+        )
+      ,state = .x
+      #,county = substr(., 3,5)
+      ,year = .y
+      ,survey = survey
+      ,county = cofps
+      ,geometry = F
+      ,cache_table = T
+    ) %>%
+        mutate(year = .y
+        ) %>%
+        rename_with( tolower )
+    }) %>%
     select(-name)
 
   # pivot wide
   tots <- tots %>%
     select(-moe) %>%
-    pivot_wider(names_from = variable
-                ,values_from = estimate)
+    tidyr::pivot_wider(names_from = variable
+                       ,values_from = estimate)
 
   return(tots)
 }
@@ -277,43 +291,50 @@ get.all.rentals.by.price.lvl <- function( states
                                           ,cofps = NULL
                                           ,survey = 'acs5') {
 
-  require(tidyverse)
+  requireNamespace("dplyr")
+  requireNamespace("purrr")
+  requireNamespace("tidycensus")
 
   params <- expand.grid(states, years)
 
-  occ.rent <- map2_dfr( params[[1]], params[[2]]
-                    ,~{ tidycensus::get_acs(
-                      geography = geo
-                      ,table = 'B25056'
-                      ,state = .x
-                      ,county = cofps
-                      ,year = .y
-                      ,survey = survey
-                      ,geometry = F
-                      ,cache_table = T
-                    ) %>%
-                        mutate(year = .y
-                        ) %>%
-                        rename_with( tolower )
-                    }) %>%
+  occ.rent <-
+    purrr::map2_dfr(
+      params[[1]], params[[2]]
+      ,~{ tidycensus::get_acs(
+        geography = geo
+        ,table = 'B25056'
+        ,state = .x
+        ,county = cofps
+        ,year = .y
+        ,survey = survey
+        ,geometry = F
+        ,cache_table = T
+      ) %>%
+          mutate(year = .y
+          ) %>%
+          rename_with( tolower )
+      }) %>%
     select(-name) %>%
-    mutate(var = extract.acs.var(variable))
+    mutate(var =
+             extract.acs.var(variable))
 
-  vac.rent <- map2_dfr( params[[1]], params[[2]]
-                        ,~{ tidycensus::get_acs(
-                          geography = geo
-                          ,table = 'B25061'
-                          ,state = .x
-                          ,county = cofps
-                          ,year = .y
-                          ,survey = survey
-                          ,geometry = F
-                          ,cache_table = T
-                        ) %>%
-                            mutate(year = .y
-                            ) %>%
-                            rename_with( tolower )
-                        }) %>%
+  vac.rent <-
+    purrr::map2_dfr(
+      params[[1]], params[[2]]
+      ,~{ tidycensus::get_acs(
+        geography = geo
+        ,table = 'B25061'
+        ,state = .x
+        ,county = cofps
+        ,year = .y
+        ,survey = survey
+        ,geometry = F
+        ,cache_table = T
+      ) %>%
+          mutate(year = .y
+          ) %>%
+          rename_with( tolower )
+      }) %>%
     select(-name) %>%
     mutate(var = extract.acs.var(variable))
 
@@ -321,12 +342,13 @@ get.all.rentals.by.price.lvl <- function( states
     acs.rentals.by.level.recode(
       acs.tbl = 'B25056'
     )
+
   vac.rent <- vac.rent %>%
     acs.rentals.by.level.recode(
       acs.tbl = 'B25061'
     )
 
-  rentals <- rbind(occ.rent
+  rentals <- rbind( occ.rent
                    ,vac.rent)
 
   rentals <- rentals %>%
@@ -352,6 +374,7 @@ get.all.rentals.by.price.lvl <- function( states
 #' @inheritParams tidycensus2recoded.tblList
 #'
 #' @export mass.acs.pull.wrapper
+#'
 mass.acs.pull.wrapper <- function(state,
                                   county,
                                   year) {

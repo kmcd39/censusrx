@@ -17,11 +17,11 @@ api.geos <- c(
   )
 
 tigris.fcns <- c(
-  tigris::blocks, tigris::block_groups, tigris::tracts
+  tigris::blocks,
+  tigris::block_groups, tigris::tracts
   ,tigris::counties, tigris::county_subdivisions,
   tigris::places, tigris::core_based_statistical_areas, tigris::combined_statistical_areas
-  ,tigris::urban_areas, tigris::states
-)
+  ,tigris::urban_areas, tigris::states )
 
 tigris.acs.geo.equivalents <-
   tibble(
@@ -33,7 +33,9 @@ generic.fcn <- tigris.acs.geo.equivalents[
   tigris.acs.geo.equivalents$api.geos == "block group"
                            , ]$tigris.fcns[[1]]
 
-generic.fcn(state = "25")
+tigris::block_groups
+generic.fcn(state = "25"
+            ,county = "015")
 
 # write -------------------------------------------------------------------
 

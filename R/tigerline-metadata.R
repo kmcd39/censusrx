@@ -1,25 +1,34 @@
 #' roads.tigerline.metadata
 #'
-#' Export metadata for roads tigerline features
+#' Export metadata for roads tigerline features.
+#'
+#' Retruns a mapping for route type (`rttyp`) if `rttyp = T`; otherwise returns
+#' descriptions for `MTFCC`
+#'
 #'
 #' @export roads.tigerline.metadata
+#'
 roads.tigerline.metadata <- function(rttyp = F) {
 
+  requireNamespace("dplyr")
+
   if(rttyp)
-    return(tibble(
-       rttyp = Hmisc::Cs(C, I, M, O, S, U)
-      ,desc = Hmisc::Cs(county, interstate, common.name, other, state, US)
-    ))
+    return(
+      tibble(
+        rttyp = c("C", "I", "M", "O", "S", "U")
+        ,desc = c("county", "interstate", "common.name", "other", "state", "US")
+      )
+    )
 
   tibble(
-    mtfcc = Hmisc::Cs(
-      S1100
-      ,S1200
-      ,S1400
-      ,S1630
-      ,S1710
-      ,S1730
-      ,S1820
+    mtfcc = c(
+       "S1100"
+      ,"S1200"
+      ,"S1400"
+      ,"S1630"
+      ,"S1710"
+      ,"S1730"
+      ,"S1820"
     )
     ,desc = c(
       'Primary Road'
@@ -31,6 +40,5 @@ roads.tigerline.metadata <- function(rttyp = F) {
       ,'Bike Path/Trail'
     )
   )
-
 
 }
